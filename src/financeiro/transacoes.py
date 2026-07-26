@@ -1,5 +1,5 @@
 from dados.dados import salvar_json, carregar_json, CAMINHO_TRANSACOES, CAMINHO_CATEGORIAS
-from financeiro.categorias import obter_todas_categorias
+from financeiro.categorias import obter_todas_categorias,escolher_categoria
 from utils.utils import criar_id
 from financeiro.calculos import total_receitas
 
@@ -7,7 +7,16 @@ lista_transacoes = carregar_json(CAMINHO_TRANSACOES)
 
 
 def adicionar_transacao():
-    categoria = obter_todas_categorias()
+
+    categorias = obter_todas_categorias()
+
+    if not categorias:
+        print(
+            "Nenhuma categoria cadastrada.\n"
+            "Volte ao menu de categorias e crie uma antes de adicionar uma transação."
+        )
+        return
+
 
     descricao = input("Digite a descrição: ")
 
@@ -15,34 +24,48 @@ def adicionar_transacao():
         try:
             valor = float(input("Digite o valor: "))
             break
+
         except ValueError:
             print("Valor inválido. Digite apenas números.")
 
+
     while True:
-        tipo = input("Digite o tipo (receita/despesa): ").lower()
+        tipo = input(
+            "Digite o tipo (receita/despesa): "
+        ).lower()
 
         if tipo in ["receita", "despesa"]:
             break
 
-        print("Tipo inválido. Digite receita ou despesa.")
+        print("Tipo inválido.")
 
-    data = input("Digite a data (dd/mm/aaaa): ")
 
-    transacao_id = criar_id(lista_transacoes)
+    data = input(
+        "Digite a data (dd/mm/aaaa): "
+    )
+
+
+    categoria_id = escolher_categoria(categorias)
+
 
     transacao = {
-        "id": transacao_id,
+        "id": criar_id(lista_transacoes),
         "descricao": descricao,
         "valor": valor,
         "tipo": tipo,
-        "categoria_id": categoria,
+        "categoria_id": categoria_id,
         "data": data
     }
 
-    lista_transacoes.append(transacao)
-    salvar_json(CAMINHO_TRANSACOES,lista_transacoes)
 
-    print("Transação adicionada com sucesso!")
+    lista_transacoes.append(transacao)
+
+    salvar_json(
+        CAMINHO_TRANSACOES,
+        lista_transacoes
+    )
+
+    return "SUCESSO"
 
 
 def listar_transacoes():

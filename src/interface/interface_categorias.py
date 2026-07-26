@@ -18,7 +18,7 @@ def tela_categorias():
     console.print()
     console.print(Panel(
         "[dim][1] Nova categoria   [2] Editar limite   [3] Remover categoria   [4] Sair[/dim]\n"
-        "[bold yellow](funcionalidade ainda não implementada - somente interface)[/bold yellow]",
+        "[bold yellow]gerencie suas categorias[/bold yellow]",
         title="Ações", border_style="grey50", box=box.ROUNDED,
     ))
     submenu_categorias()

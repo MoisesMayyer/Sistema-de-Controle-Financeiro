@@ -36,5 +36,30 @@ def remover_categoria(id_remover):
     return False
 
 
+def escolher_categoria(categorias: list[dict]) -> int:
+
+    print("\nCategorias disponíveis:")
+
+    for categoria in categorias:
+        print(
+            f"{categoria['id']} - {categoria['nome']}"
+        )
+
+    while True:
+        try:
+            escolha = int(
+                input("\nEscolha uma categoria: ")
+            )
+
+            for categoria in categorias:
+                if categoria["id"] == escolha:
+                    return categoria["id"]
+
+            print("Categoria não encontrada.")
+
+        except ValueError:
+            print("Digite apenas números.")
+
+
 def obter_todas_categorias():
     return carregar_json(CAMINHO_CATEGORIAS)
