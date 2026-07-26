@@ -2,12 +2,10 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 from rich.align import Align
-from rich.progress import Progress, BarColumn, TextColumn
 from rich import box
 from dados.dados import carregar_json, CAMINHO_TRANSACOES
 from financeiro.calculos import obter_resumo
 from rich.console import Console
-
 from financeiro.transacoes import buscar_nome_categoria
 
 console = Console()
@@ -69,34 +67,8 @@ def montar_tabela_transacoes() -> Panel:
     )
 
 
-
-def montar_meta() -> Panel:
-    resumo = obter_resumo()
-
-    pct = resumo["economizado"] / resumo["meta_economia"] * 100
-
-    barra = Progress(
-        TextColumn("Meta de Economia"),
-        BarColumn(bar_width=40, complete_style="bright_green"),
-        TextColumn(f"{pct:.0f}%"),
-    )
-
-    barra.add_task(
-        "",
-        total=resumo["meta_economia"],
-        completed=resumo["economizado"]
-    )
-
-    return Panel(
-        barra,
-        border_style="bright_green",
-        box=box.ROUNDED
-    )
-
-
 def tela_dashboard():
     console.print(montar_cards_resumo())
     console.print()
-    console.print(montar_meta())
     console.print()
     console.print(montar_tabela_transacoes())

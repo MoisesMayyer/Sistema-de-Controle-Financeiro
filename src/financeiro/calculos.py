@@ -35,6 +35,7 @@ def obter_resumo():
     receitas = 0
     despesas = 0
 
+
     for transacao in transacoes:
         if transacao["tipo"] == "receita":
             receitas += transacao["valor"]
@@ -46,8 +47,6 @@ def obter_resumo():
         "saldo": receitas - despesas,
         "receitas": receitas,
         "despesas": despesas,
-        "meta_economia": 100,
-        "economizado": 0
     }
 
 def calcular_gasto_categoria(id_categoria):

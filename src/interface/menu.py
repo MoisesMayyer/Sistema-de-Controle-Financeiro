@@ -12,7 +12,7 @@ from interface.componentes_menu import (
 from interface.dashboard_menu import tela_dashboard
 from interface.interface_transacoes import tela_transacoes
 from interface.interface_categorias import tela_categorias
-
+from interface.interfaces_meta import tela_metas
 
 console = Console()
 
@@ -21,6 +21,7 @@ menu_opcoes = [
     ("1", "📊 Dashboard"),
     ("2", "💸 Transações"),
     ("3", "📈 Categorias"),
+    ("4", "🎯 Metas"),
     ("0", "🚪 Sair"),
 ]
 
@@ -28,7 +29,8 @@ menu_opcoes = [
 TELAS = {
     "1": tela_dashboard,
     "2": tela_transacoes,
-    "3": tela_categorias
+    "3": tela_categorias,
+    "4": tela_metas
 }
 
 
