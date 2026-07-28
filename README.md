@@ -1,34 +1,30 @@
 # Sistema de Controle Financeiro
 
-Este projeto é um sistema de controle financeiro desenvolvido em Python para execução no terminal. O objetivo é gerenciar receitas e despesas de forma organizada, demonstrando lógica de programação, organização de código e atenção aos detalhes.
+Sistema de controle financeiro desenvolvido em Python com execução no terminal, criado para gerenciamento de receitas e despesas de forma organizada. O projeto aplica conceitos de programação, estrutura modular, manipulação de dados, validação de entradas e boas práticas de organização de código.
 
-## Objetivo
+## Sobre o projeto
 
-Criar uma aplicação que permita ao usuário registrar, organizar e acompanhar suas receitas e despesas, gerando relatórios e armazenando as informações para consultas futuras.
+O objetivo da aplicação é permitir que o usuário registre e acompanhe sua movimentação financeira, mantendo os dados organizados e facilitando a visualização de informações como saldo atual, receitas, despesas e relatórios.
+
+O projeto foi desenvolvido com uma estrutura escalável, permitindo futuras melhorias como integração com banco de dados, APIs e uma interface gráfica ou web.
 
 ## Funcionalidades
 
-✅ Adicionar novas receitas e despesas  
-✅ Listar receitas e despesas cadastradas  
-✅ Tratamento de erros de entrada de dados  
-✅ Mostrar saldo e totais acumulados (receitas x despesas)  
-✅ Editar receitas e despesas existentes  
-✅ Remover receitas e despesas  
-✅ Gerar relatórios financeiros  
-✅ Salvar dados para uso futuro com banco de dados ou arquivo
+- Cadastro de receitas e despesas
+- Listagem de movimentações financeiras
+- Edição e remoção de registros
+- Controle de categorias financeiras
+- Cálculo de saldo atual
+- Visualização de totais de receitas e despesas
+- Geração de relatórios financeiros
+- Validação e tratamento de erros de entrada
+- Armazenamento de dados para persistência
+- Organização modular para facilitar manutenção e evolução
 
-## Como executar
+## Tecnologias utilizadas
 
-No terminal, execute:
-
-```bash
-python __main__.py
-```
-
-```bash
-SistemaDeControleFinanceiro/
-│
-├── __main__.py      # Ponto de entrada do programa
-├── src/             # Funções principais do sistema (receitas, despesas, relatórios)
-└── dados/           # Armazenamento de dados
-```
+- Python
+- JSON para armazenamento de dados
+- Rich para criação da interface no terminal
+- Programação modular
+- Manipulação de arquivos
