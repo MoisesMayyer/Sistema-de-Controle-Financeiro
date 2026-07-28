@@ -165,7 +165,7 @@ def tela_metas() -> None:
         console.clear()
         mostrar_cabecalho_metas()
 
-        metas = carregar_json(CAMINHO_METAS) 
+        metas = carregar_json(CAMINHO_METAS)
         mostrar_metas(metas)
 
         escolha = mostrar_menu_metas()
