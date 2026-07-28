@@ -7,6 +7,8 @@ CAMINHO_TRANSACOES  = PASTA_DADOS / "gastos.json"
 
 CAMINHO_CATEGORIAS = PASTA_DADOS / "categorias.json"
 
+CAMINHO_METAS = PASTA_DADOS / "metas.json"
+
 
 def carregar_json(caminho: Path):
 

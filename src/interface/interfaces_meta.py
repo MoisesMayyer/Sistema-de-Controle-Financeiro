@@ -7,6 +7,7 @@ from rich.text import Text
 from rich.prompt import Prompt
 from rich import box
 
+from dados.dados import carregar_json, CAMINHO_METAS
 from financeiro.metas import (
     adicionar_meta,
     editar_meta,
@@ -15,7 +16,6 @@ from financeiro.metas import (
 
 
 console = Console()
-
 
 metas_opcoes = [
     ("1", "➕ Adicionar Meta"),
@@ -50,21 +50,12 @@ def mostrar_cabecalho_metas() -> None:
     )
 
 
-def mostrar_menu_metas(opcao_ativa: str) -> str:
+def mostrar_menu_metas() -> str:
 
     texto = Text()
 
     for codigo, rotulo in metas_opcoes:
-        if codigo == opcao_ativa:
-            texto.append(
-                f" ➤ [{codigo}] {rotulo}\n",
-                style="bold black on green",
-            )
-        else:
-            texto.append(
-                f"   [{codigo}] {rotulo}\n",
-                style="white",
-            )
+        texto.append(f"   [{codigo}] {rotulo}\n", style="white")
 
     console.print(
         Panel(
@@ -168,69 +159,42 @@ def mostrar_metas(metas: list[dict]) -> None:
     console.print()
 
 
-def _pausar() -> None:
-
-    console.print()
-    Prompt.ask(
-        "[dim]Pressione Enter para continuar[/dim]",
-        default="",
-        show_default=False,
-    )
-
-
 def tela_metas() -> None:
-    metas = [
-        {
-            "id": 1,
-            "nome": "Notebook Novo",
-            "porcentagem": 100,
-        },
-        {
-            "id": 2,
-            "nome": "Reserva de Emergência",
-            "porcentagem": 40,
-        },
-    ]
-
-    opcao_ativa = "1"
 
     while True:
-
         console.clear()
+        mostrar_cabecalho_metas()
 
+        metas = carregar_json(CAMINHO_METAS) 
         mostrar_metas(metas)
 
-        escolha = mostrar_menu_metas(opcao_ativa)
+        escolha = mostrar_menu_metas()
 
-        opcao_ativa = escolha
+        console.clear()
+        mostrar_cabecalho_metas()
 
         if escolha == "1":
             adicionar_meta()
-            _pausar()
 
         elif escolha == "2":
             editar_meta()
-            _pausar()
 
         elif escolha == "3":
             remover_meta()
-            _pausar()
 
         elif escolha == "0":
-
             console.print()
             console.print(
                 Panel(
                     Align.center(
-                        Text(
-                            "Retornando ao menu principal...",
-                            style="bold green",
-                        )
+                        Text("Retornando ao menu principal...", style="bold green")
                     ),
                     box=box.DOUBLE,
                     border_style="green",
                     padding=(1, 2),
                 )
             )
-
             break
+
+        if escolha != "0":
+            Prompt.ask("\n[dim]Pressione Enter para continuar[/dim]", default="")

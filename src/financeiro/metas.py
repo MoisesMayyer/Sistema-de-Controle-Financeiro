@@ -4,7 +4,8 @@ def calcular_meta():
     pass
 
 def adicionar_meta():
-    pass
+    nome = input("digite sua meta:")
+
 
 
 def editar_meta():
