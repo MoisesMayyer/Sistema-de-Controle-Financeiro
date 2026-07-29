@@ -1,9 +1,17 @@
 from rich.panel import Panel
-from rich.progress import Progress, BarColumn, TextColumn
+from rich.progress import (
+    Progress,
+    BarColumn,
+    TextColumn,
+    )
 from rich import box
 from rich.console import Console
 
-from dados.dados import carregar_json, CAMINHO_CATEGORIAS
+from dados.dados import (
+    carregar_json,
+    CAMINHO_CATEGORIAS,
+    )
+
 from financeiro.transacoes.calculos import calcular_gasto_categoria
 
 console = Console()

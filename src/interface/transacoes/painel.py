@@ -3,9 +3,15 @@ from rich.table import Table
 from rich.text import Text
 from rich.align import Align
 from rich import box
-from dados.dados import carregar_json, CAMINHO_TRANSACOES
-from financeiro.transacoes.calculos import obter_resumo
 from rich.console import Console
+
+from dados.dados import (
+    carregar_json,
+    CAMINHO_TRANSACOES,
+    )
+
+from financeiro.transacoes.calculos import obter_resumo
+
 from financeiro.transacoes.crud import buscar_nome_categoria
 
 console = Console()
