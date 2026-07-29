@@ -6,7 +6,7 @@ from rich import box
 from dados.dados import carregar_json, CAMINHO_TRANSACOES
 from financeiro.transaçoes.calculos import obter_resumo
 from rich.console import Console
-from financeiro.transaçoes.transacoes import buscar_nome_categoria
+from financeiro.transaçoes.crud import buscar_nome_categoria
 
 console = Console()
 

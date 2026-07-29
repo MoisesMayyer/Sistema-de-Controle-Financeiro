@@ -8,7 +8,7 @@ from rich.prompt import Prompt
 from rich import box
 
 from dados.dados import carregar_json, CAMINHO_METAS
-from financeiro.metas.metas import (
+from financeiro.metas.crud import (
     adicionar_meta,
     editar_meta,
     remover_meta,

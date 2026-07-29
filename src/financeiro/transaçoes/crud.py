@@ -1,5 +1,5 @@
 from dados.dados import salvar_json, carregar_json, CAMINHO_TRANSACOES, CAMINHO_CATEGORIAS
-from financeiro.categorias.categorias import obter_todas_categorias,escolher_categoria
+from financeiro.categorias.crud import obter_todas_categorias,escolher_categoria
 from utils.utils import criar_id
 from financeiro.transaçoes.calculos import total_receitas
 

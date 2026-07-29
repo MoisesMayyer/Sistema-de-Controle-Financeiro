@@ -2,7 +2,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich import box
 
-from financeiro.transaçoes.transacoes import (
+from financeiro.transaçoes.crud import (
     adicionar_transacao,
     editar_transacao,
     remover_transacao

@@ -1,8 +1,8 @@
 from rich.panel import Panel
 from rich.console import Console
 from rich import box
-from interface.categorias.categorias_menu import montar_categorias
-from financeiro.categorias.categorias import (
+from interface.categorias.painel import montar_categorias
+from financeiro.categorias.crud import (
     nova_categoria, 
     remover_categoria, 
     editar_categoria, 
