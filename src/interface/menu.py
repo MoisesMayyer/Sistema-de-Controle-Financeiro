@@ -9,10 +9,10 @@ from interface.componentes_menu import (
     montar_menu_lateral,
 )
 
-from interface.dashboard_menu import tela_dashboard
-from interface.interface_transacoes import tela_transacoes
-from interface.interface_categorias import tela_categorias
-from interface.interfaces_meta import tela_metas
+from interface.transaçoes.dashboard_menu import tela_dashboard
+from interface.transaçoes.interface_transacoes import tela_transacoes
+from interface.categorias.interface_categorias import tela_categorias
+from interface.metas.interfaces_meta import tela_metas
 
 console = Console()
 
