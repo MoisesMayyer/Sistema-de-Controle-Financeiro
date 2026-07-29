@@ -12,6 +12,7 @@ from financeiro.metas import (
     adicionar_meta,
     editar_meta,
     remover_meta,
+    calcular_porcentagem_meta, adicionar_valor_meta
 )
 
 
@@ -19,8 +20,9 @@ console = Console()
 
 metas_opcoes = [
     ("1", "➕ Adicionar Meta"),
-    ("2", "✏️  Editar Meta"),
-    ("3", "🗑️  Remover Meta"),
+    ("2", "➕ Adicionar valor"),
+    ("3", "✏️  Editar Meta"),
+    ("4", "🗑️  Remover Meta"),
     ("0", "↩️  Voltar"),
 ]
 
@@ -76,7 +78,7 @@ def painel_meta(
     *,
     id_meta: int,
     nome: str,
-    porcentagem: int,
+    porcentagem: float,
 ) -> Panel:
 
     concluida = porcentagem >= 100
@@ -89,7 +91,7 @@ def painel_meta(
     cabecalho.add_column(justify="right")
     cabecalho.add_row(
         Text(f"#{id_meta}", style="dim white") + Text(f"  {nome}", style="bold white"),
-        Text(f"{porcentagem}%", style=cor_destaque),
+        Text(f"{porcentagem:.0f}%", style=cor_destaque),
     )
 
     barra = ProgressBar(
@@ -150,7 +152,10 @@ def mostrar_metas(metas: list[dict]) -> None:
         painel_meta(
             id_meta=meta["id"],
             nome=meta["nome"],
-            porcentagem=meta["porcentagem"],
+            porcentagem=calcular_porcentagem_meta(
+                meta["valor_atual"],
+                meta["valor_meta"]
+            )
         )
         for meta in metas
     ]
@@ -177,9 +182,12 @@ def tela_metas() -> None:
             adicionar_meta()
 
         elif escolha == "2":
-            editar_meta()
+            adicionar_valor_meta()
 
         elif escolha == "3":
+            editar_meta()
+
+        elif escolha == "4":
             remover_meta()
 
         elif escolha == "0":
