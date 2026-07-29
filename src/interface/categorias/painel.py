@@ -4,7 +4,7 @@ from rich import box
 from rich.console import Console
 
 from dados.dados import carregar_json, CAMINHO_CATEGORIAS
-from financeiro.transaçoes.calculos import calcular_gasto_categoria
+from financeiro.transacoes.calculos import calcular_gasto_categoria
 
 console = Console()
 

@@ -1,7 +1,18 @@
-from dados.dados import salvar_json, carregar_json, CAMINHO_TRANSACOES, CAMINHO_CATEGORIAS
-from financeiro.categorias.crud import obter_todas_categorias,escolher_categoria
-from utils.utils import criar_id
-from financeiro.transaçoes.calculos import total_receitas
+from dados.dados import (
+    salvar_json,
+    carregar_json,
+    CAMINHO_TRANSACOES,
+    CAMINHO_CATEGORIAS,
+    )
+
+from financeiro.categorias.crud import (
+    obter_todas_categorias,
+    escolher_categoria,
+    )
+
+from utils.id import criar_id
+
+from financeiro.transacoes.calculos import total_receitas
 
 lista_transacoes = carregar_json(CAMINHO_TRANSACOES)
 

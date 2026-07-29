@@ -9,8 +9,8 @@ from interface.componentes_menu_principal import (
     montar_menu_lateral,
 )
 
-from interface.transaçoes.painel import tela_dashboard
-from interface.transaçoes.menu import tela_transacoes
+from interface.transacoes.painel import tela_dashboard
+from interface.transacoes.menu import tela_transacoes
 from interface.categorias.menu import tela_categorias
 from interface.metas.menu import tela_metas
 

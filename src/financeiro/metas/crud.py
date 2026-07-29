@@ -1,7 +1,13 @@
-from dados.dados import carregar_json, CAMINHO_METAS, salvar_json
-from utils.utils import criar_id
+from dados.dados import (
+    carregar_json,
+     CAMINHO_METAS,
+     salvar_json
+    )
+
+from utils.id import criar_id
 
 lista_metas = carregar_json(CAMINHO_METAS)
+
 
 def calcular_porcentagem_meta(valor_atual, valor_meta):
     if valor_meta == 0:

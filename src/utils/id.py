@@ -1,5 +1,4 @@
 
-
 def criar_id(lista) -> int:
     if not lista:
         return 1

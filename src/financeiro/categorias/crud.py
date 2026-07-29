@@ -1,5 +1,10 @@
-from dados.dados import carregar_json, salvar_json, CAMINHO_CATEGORIAS
-from utils.utils import criar_id
+from dados.dados import (
+    carregar_json,
+    salvar_json,
+    CAMINHO_CATEGORIAS
+    )
+
+from utils.id import criar_id
 
 
 def nova_categoria(nome_categoria, limite_categoria):
