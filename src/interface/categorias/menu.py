@@ -63,7 +63,7 @@ def submenu_categorias():
                 if remover_categoria(id_cat):
                     console.print("[green]Removido![/green]")
                 else:
-                    console.print("[red]ID não encontrado.[/red]")
+                    console.print("[red]ID inexistente ou em uso. Voce nao pode apagar IDs em uso[/red]")
             except ValueError:
                 console.print("[red]ID inválido.[/red]")
 
