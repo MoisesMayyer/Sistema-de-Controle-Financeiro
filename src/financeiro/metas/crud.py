@@ -34,7 +34,12 @@ def adicionar_valor_meta():
                 if valor_adicionado < 0:
                     raise ValueError
 
-                meta["valor_atual"] += valor_adicionado
+                if meta["valor_atual"] + valor_adicionado <= meta["valor_meta"]:
+                    meta["valor_atual"] += valor_adicionado
+
+                else:
+                    print("O valor adicionado excede o valor da meta.")
+                    return
 
                 salvar_json(CAMINHO_METAS, lista_metas)
                 print("Valor adicionado com sucesso!")
@@ -50,14 +55,24 @@ def adicionar_meta():
 
     lista_metas = obter_metas()
 
-    nome_meta = input("digite o nome da nova meta: ")
-
     while True:
         try:
+            nome_meta = input("digite o nome da nova meta: ")
+
+            if nome_meta.strip() == "":
+                print("O nome da meta não pode ser vazio.")
+                raise ValueError
+
             valor_meta = int(input("digite o valor da meta: "))
+
+            if valor_meta <= 0:
+                print("digite um valor valido")
+                raise ValueError
+
             break
+
         except ValueError:
-            print("digite um valor valido")
+            print("Tente novamente")
 
     metas = {
         "id": criar_id(lista_metas),
@@ -75,19 +90,37 @@ def editar_meta():
 
     lista_metas = obter_metas()
 
-    id_alterar = int(input("digite o id que deseja alterar: "))
+    try:
+        id_alterar = int(input("Digite o id da meta: "))
 
-    for meta in lista_metas:
+        for meta in lista_metas:
 
-        if meta["id"] == id_alterar:
-            meta["nome"] = input("digite o novo nome: ")
+            if meta["id"] == id_alterar:
 
-            try:
-                meta["valor_meta"] = int(input("Digite o novo valor: "))
-            except ValueError:
-                print("Digite um valor válido.")
+                novo_nome = input("Digite o novo nome: ").strip()
 
-            salvar_json(CAMINHO_METAS, lista_metas)
+                if novo_nome == "":
+                    raise ValueError
+
+                novo_valor = int(input("Digite o novo valor: "))
+
+                if novo_valor <= 0:
+                    raise ValueError
+
+                meta["nome"] = novo_nome
+                meta["valor_meta"] = novo_valor
+
+                salvar_json(CAMINHO_METAS, lista_metas)
+
+                print("Meta alterada com sucesso!")
+                return
+
+        print("Meta não encontrada.")
+
+    except ValueError:
+        print("Digite valores válidos.")
+
+
 
 
 def remover_meta():
