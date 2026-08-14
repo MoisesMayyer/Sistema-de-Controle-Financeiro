@@ -29,53 +29,91 @@ def tela_categorias():
 def submenu_categorias():
     while True:
         try:
+
             opcao = int(console.input("[bold]Digite sua opção: [/bold]"))
+
         except ValueError:
+
             console.print("[red]Opção inválida![/red]")
+
             continue
 
         if opcao == 1:
-            nome = console.input("Nome da categoria: ").strip()
-            try:
-                limite = float(console.input("Limite: "))
-                if nova_categoria(nome, limite):
-                    console.print("[green]Categoria criada![/green]")
-            except ValueError:
-                console.print("[red]Limite inválido.[/red]")
+
+            while True:
+
+                try:
+                    nome = console.input("Nome da categoria: ").strip()
+
+                    if nome == "":
+                        raise ValueError
+
+                    limite = float(console.input("Limite: "))
+
+                    if limite < 0:
+                        raise ValueError
+
+                    if nova_categoria(nome, limite):
+                        console.print("[green]Categoria criada![/green]")
+                        break
+
+                except ValueError:
+                    console.print("[red]Entrada inválida.[/red]")
+
             
         elif opcao == 2:
+
             exibir_lista_simples()
+
             try:
                 id_cat = int(console.input("ID para editar: "))
-                nome = console.input("Novo nome: ")
+
+                nome = console.input("Novo nome: ").strip()
+
+                if nome =="":
+                    raise ValueError
+
                 limite = float(console.input("Novo limite: "))
+                if limite < 0:
+                    raise ValueError
+
                 if editar_categoria(id_cat, nome, limite):
                     console.print("[green]Alterado com sucesso![/green]")
+
                 else:
                     console.print("[red]ID não encontrado.[/red]")
+
             except ValueError:
                 console.print("[red]Entrada inválida.[/red]")
 
         elif opcao == 3:
             exibir_lista_simples()
+
             try:
                 id_cat = int(console.input("ID para remover: "))
+
                 if remover_categoria(id_cat):
                     console.print("[green]Removido![/green]")
+
                 else:
                     console.print("[red]ID inexistente ou em uso. Voce nao pode apagar IDs em uso[/red]")
+
             except ValueError:
                 console.print("[red]ID inválido.[/red]")
 
         elif opcao == 4:
             break
+
         else:
             console.print("[red]Opção inexistente![/red]")
 
 def exibir_lista_simples():
+
     categorias = obter_todas_categorias()
+
     if not categorias:
         console.print("[yellow]Nenhuma categoria disponível.[/yellow]")
         return
+
     for c in categorias:
         console.print(f"ID: {c['id']} | Nome: {c['nome']}")
