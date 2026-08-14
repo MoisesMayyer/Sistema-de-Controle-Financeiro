@@ -14,10 +14,13 @@ from utils.id import criar_id
 
 from financeiro.transacoes.calculos import total_receitas
 
-lista_transacoes = carregar_json(CAMINHO_TRANSACOES)
+def obter_transacoes():
+    return carregar_json(CAMINHO_TRANSACOES)
 
 
 def adicionar_transacao():
+
+    lista_transacoes = obter_transacoes()
 
     categorias = obter_todas_categorias()
 
@@ -80,6 +83,9 @@ def adicionar_transacao():
 
 
 def listar_transacoes():
+
+    lista_transacoes = obter_transacoes()
+
     if not lista_transacoes:
         print("Nenhuma transação registrada.")
         return
@@ -96,6 +102,9 @@ def listar_transacoes():
 
 
 def editar_transacao():
+
+    lista_transacoes = obter_transacoes()
+
     if not lista_transacoes:
         print("Nenhuma transação registrada.")
         return
@@ -138,6 +147,9 @@ def editar_transacao():
 
 
 def remover_transacao():
+
+    lista_transacoes = obter_transacoes()
+
     if not lista_transacoes:
         print("Nenhuma transação registrada.")
         return
@@ -161,6 +173,8 @@ def remover_transacao():
 
 
 def total_despesas():
+    lista_transacoes = obter_transacoes()
+
     if not lista_transacoes:
         print("Nenhuma transação registrada.")
         return
@@ -176,6 +190,7 @@ def total_despesas():
 
 
 def buscar_nome_categoria(categoria_id):
+
     lista_categorias = carregar_json(CAMINHO_CATEGORIAS)
 
     for categoria in lista_categorias:
