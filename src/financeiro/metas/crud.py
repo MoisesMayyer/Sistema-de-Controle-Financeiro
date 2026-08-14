@@ -6,7 +6,8 @@ from dados.dados import (
 
 from utils.id import criar_id
 
-lista_metas = carregar_json(CAMINHO_METAS)
+def obter_metas():
+    return carregar_json(CAMINHO_METAS)
 
 
 def calcular_porcentagem_meta(valor_atual, valor_meta):
@@ -17,7 +18,9 @@ def calcular_porcentagem_meta(valor_atual, valor_meta):
 
     return min(porcentagem, 100)
 
+
 def adicionar_valor_meta():
+    lista_metas = obter_metas()
 
     try:
         id_meta = int(input("Digite o id da meta: "))
@@ -44,6 +47,9 @@ def adicionar_valor_meta():
 
 
 def adicionar_meta():
+
+    lista_metas = obter_metas()
+
     nome_meta = input("digite o nome da nova meta: ")
 
     while True:
@@ -66,8 +72,13 @@ def adicionar_meta():
 
 
 def editar_meta():
+
+    lista_metas = obter_metas()
+
     id_alterar = int(input("digite o id que deseja alterar: "))
+
     for meta in lista_metas:
+
         if meta["id"] == id_alterar:
             meta["nome"] = input("digite o novo nome: ")
 
@@ -80,6 +91,9 @@ def editar_meta():
 
 
 def remover_meta():
+
+    lista_metas = obter_metas()
+
     try:
         deletar_id = int(input("digite o id da meta que deseja remover:"))
         for meta in lista_metas:
