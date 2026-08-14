@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dados.dados import (
     salvar_json,
     carregar_json,
@@ -53,10 +55,15 @@ def adicionar_transacao():
 
         print("Tipo inválido.")
 
+    while True:
+        try:
+            data = input("Digite a data (dd/mm/aaaa): ")
 
-    data = input(
-        "Digite a data (dd/mm/aaaa): "
-    )
+            data_convertida = datetime.strptime(data, "%d/%m/%Y")
+            break
+
+        except ValueError:
+            print("Data inválida. Digite no formato dd/mm/aaaa.")
 
 
     categoria_id = escolher_categoria(categorias)
@@ -104,6 +111,7 @@ def listar_transacoes():
 def editar_transacao():
 
     lista_transacoes = obter_transacoes()
+    categorias = obter_todas_categorias()
 
     if not lista_transacoes:
         print("Nenhuma transação registrada.")
@@ -128,15 +136,27 @@ def editar_transacao():
                 except ValueError:
                     print("Valor inválido. Digite apenas números.")
 
-            transacao["tipo"] = input(
-                "Digite o novo tipo (receita/despesa): "
-            ).lower()
+            while True:
 
-            transacao["categoria_id"] = input("Digite a nova categoria: ")
+                transacao["tipo"] = input(
+                    "Digite o novo tipo (receita/despesa): "
+                ).lower()
 
-            transacao["data"] = input(
-                "Digite a nova data (dd/mm/aaaa): "
-            )
+                if transacao["tipo"] in ["receita", "despesa"]:
+                    break
+
+                print("Tipo inválido. Digite receita ou despesa.")
+
+
+            transacao["categoria_id"] = escolher_categoria(categorias)
+
+            while True:
+                try:
+                    transacao["data"] = input("Digite a nova data (dd/mm/aaaa): ")
+                    datetime.strptime(transacao["data"], "%d/%m/%Y")
+                    break
+                except ValueError:
+                    print("Data inválida. Digite no formato dd/mm/aaaa.")
 
             salvar_json(CAMINHO_TRANSACOES, lista_transacoes)
 
