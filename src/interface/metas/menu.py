@@ -19,6 +19,8 @@ from financeiro.metas.crud import (
     calcular_porcentagem_meta, adicionar_valor_meta
 )
 
+from interface.metas.inputs_metas import input_metas
+
 
 console = Console()
 
@@ -183,13 +185,22 @@ def tela_metas() -> None:
         mostrar_cabecalho_metas()
 
         if escolha == "1":
-            adicionar_meta()
+
+            nome, valor, _ = input_metas(precisa_id=False)
+            adicionar_meta(nome,valor)
 
         elif escolha == "2":
             adicionar_valor_meta()
 
         elif escolha == "3":
-            editar_meta()
+
+            novo_nome, novo_valor, id_valor= input_metas(precisa_id=True)
+            sucesso = editar_meta(novo_nome, novo_valor, id_valor)
+
+            if sucesso:
+                print(f"[green]meta editada com sucesso[/green]")
+            else:
+                print(f"[red]Meta não encontrada[/red]")
 
         elif escolha == "4":
             remover_meta()

@@ -51,28 +51,9 @@ def adicionar_valor_meta():
         print("Digite um valor válido.")
 
 
-def adicionar_meta():
+def adicionar_meta(nome_meta: str,valor_meta: int) -> None:
 
     lista_metas = obter_metas()
-
-    while True:
-        try:
-            nome_meta = input("digite o nome da nova meta: ")
-
-            if nome_meta.strip() == "":
-                print("O nome da meta não pode ser vazio.")
-                raise ValueError
-
-            valor_meta = int(input("digite o valor da meta: "))
-
-            if valor_meta <= 0:
-                print("digite um valor valido")
-                raise ValueError
-
-            break
-
-        except ValueError:
-            print("Tente novamente")
 
     metas = {
         "id": criar_id(lista_metas),
@@ -86,41 +67,22 @@ def adicionar_meta():
     salvar_json(CAMINHO_METAS,lista_metas)
 
 
-def editar_meta():
+def editar_meta(novo_nome: str, valor_meta: int, valor_id: int) -> bool:
 
     lista_metas = obter_metas()
 
-    try:
-        id_alterar = int(input("Digite o id da meta: "))
+    for meta in lista_metas:
 
-        for meta in lista_metas:
+        if meta["id"] == valor_id:
 
-            if meta["id"] == id_alterar:
+            meta["nome"] = novo_nome
+            meta["valor_meta"] = valor_meta
 
-                novo_nome = input("Digite o novo nome: ").strip()
+            salvar_json(CAMINHO_METAS, lista_metas)
 
-                if novo_nome == "":
-                    raise ValueError
+            return True
 
-                novo_valor = int(input("Digite o novo valor: "))
-
-                if novo_valor <= 0:
-                    raise ValueError
-
-                meta["nome"] = novo_nome
-                meta["valor_meta"] = novo_valor
-
-                salvar_json(CAMINHO_METAS, lista_metas)
-
-                print("Meta alterada com sucesso!")
-                return
-
-        print("Meta não encontrada.")
-
-    except ValueError:
-        print("Digite valores válidos.")
-
-
+    return False
 
 
 def remover_meta():
