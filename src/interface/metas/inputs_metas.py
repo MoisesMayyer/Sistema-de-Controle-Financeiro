@@ -1,35 +1,46 @@
 from rich import print
 
-def input_metas(precisa_id: bool):
+
+def input_id() -> int:
 
     while True:
         try:
-            nome_metas = input("Digite o nome de meta: ").strip()
+            valor_id = int(input("Digite o ID da meta: "))
 
-            if nome_metas == "":
-                print("[red]digite um nome valido[/red]")
+            if valor_id < 0:
                 raise ValueError
 
-            valor_metas = int(input("digite o valor da meta: "))
-
-            if valor_metas < 0:
-                print(f"[red]digite um valor valido[/red]")
-                raise ValueError
-
-            if precisa_id:
-                while True:
-                    try:
-                        valor_id = int(input("digite o id da meta: "))
-
-                        if valor_id < 0:
-                            raise ValueError
-
-                        return nome_metas, valor_metas, valor_id
-
-                    except ValueError:
-                        print("[red]digite um ID valido[/red]")
-
-            return nome_metas, valor_metas, None
+            return valor_id
 
         except ValueError:
-            print(f"[red]Tente novamente[/red]")
+            print("[red]ID inválido[/red]")
+
+
+def input_nome() -> str:
+
+    while True:
+        try:
+            nome = input("Digite o nome da meta: ").strip()
+
+            if nome == "":
+                raise ValueError
+
+            return nome
+
+        except ValueError:
+            print("[red]Nome inválido[/red]")
+
+
+def input_valor(mensagem: str) -> float:
+
+    while True:
+        try:
+            valor = float(input(mensagem))
+
+            if valor <= 0:
+                raise ValueError
+
+            return valor
+
+        except ValueError:
+            print("[red]Valor inválido[/red]")

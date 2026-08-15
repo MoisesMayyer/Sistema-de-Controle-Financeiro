@@ -6,6 +6,7 @@ from rich.align import Align
 from rich.text import Text
 from rich.prompt import Prompt
 from rich import box
+from rich import print
 
 from dados.dados import (
     carregar_json,
@@ -16,10 +17,11 @@ from financeiro.metas.crud import (
     adicionar_meta,
     editar_meta,
     remover_meta,
-    calcular_porcentagem_meta, adicionar_valor_meta
+    calcular_porcentagem_meta, adicionar_valor_meta,
+    buscar_meta_por_id
 )
 
-from interface.metas.inputs_metas import input_metas
+from interface.metas.inputs_metas import input_nome, input_id, input_valor
 
 
 console = Console()
@@ -186,24 +188,51 @@ def tela_metas() -> None:
 
         if escolha == "1":
 
-            nome, valor, _ = input_metas(precisa_id=False)
+            nome = input_nome()
+            valor = input_valor("Digite o valor da meta: ")
+
             adicionar_meta(nome,valor)
 
         elif escolha == "2":
-            adicionar_valor_meta()
+
+            id_meta = input_id()
+            valor = input_valor("Digite o valor a ser adicionado: ")
+            sucesso = adicionar_valor_meta(id_meta, valor)
+
+            if sucesso:
+                print(f"[green]Vaor adicionado com sucesso![/green]")
+            else:
+                print(f"[red]Não foi possivel adicionar este valor![/red]")
 
         elif escolha == "3":
 
-            novo_nome, novo_valor, id_valor= input_metas(precisa_id=True)
-            sucesso = editar_meta(novo_nome, novo_valor, id_valor)
+            id_meta = input_id()
 
-            if sucesso:
-                print(f"[green]meta editada com sucesso[/green]")
+            meta = buscar_meta_por_id(id_meta)
+
+            if meta is None:
+                print("[red]Meta não encontrada.[/red]")
+
             else:
-                print(f"[red]Meta não encontrada[/red]")
+                novo_nome = input_nome()
+                novo_valor = input_valor("Digite o novo valor da meta:")
+
+                sucesso = editar_meta(novo_nome, novo_valor, id_meta)
+
+                if sucesso:
+                    print("[green]Meta editada com sucesso![/green]")
+                else:
+                    print("[red]Meta não encontrada![/red]")
 
         elif escolha == "4":
-            remover_meta()
+
+            id_meta = input_id()
+            sucesso = remover_meta(id_meta)
+
+            if sucesso:
+                print(f"[green]Meta removida com sucesso![/green]")
+            else:
+                print(f"[red]Não foi possivel remover esta meta[/red]")
 
         elif escolha == "0":
             console.print()

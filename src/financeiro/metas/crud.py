@@ -19,39 +19,26 @@ def calcular_porcentagem_meta(valor_atual, valor_meta):
     return min(porcentagem, 100)
 
 
-def adicionar_valor_meta():
+def adicionar_valor_meta(id_meta, valor_adicionado: float) -> bool:
+
     lista_metas = obter_metas()
 
-    try:
-        id_meta = int(input("Digite o id da meta: "))
+    for meta in lista_metas:
 
-        for meta in lista_metas:
-            if id_meta == meta["id"]:
-                valor_adicionado = int(
-                    input("Digite o valor que deseja depositar na meta: ")
-                )
+        if id_meta == meta["id"]:
 
-                if valor_adicionado < 0:
-                    raise ValueError
-
-                if meta["valor_atual"] + valor_adicionado <= meta["valor_meta"]:
-                    meta["valor_atual"] += valor_adicionado
-
-                else:
-                    print("O valor adicionado excede o valor da meta.")
-                    return
+            if meta["valor_atual"] + valor_adicionado <= meta["valor_meta"]:
+                meta["valor_atual"] += valor_adicionado
 
                 salvar_json(CAMINHO_METAS, lista_metas)
-                print("Valor adicionado com sucesso!")
-                return
+                return True
 
-        print("Meta não encontrada.")
+            return False
 
-    except ValueError:
-        print("Digite um valor válido.")
+    return False
 
 
-def adicionar_meta(nome_meta: str,valor_meta: int) -> None:
+def adicionar_meta(nome_meta: str,valor_meta: float) -> None:
 
     lista_metas = obter_metas()
 
@@ -67,7 +54,7 @@ def adicionar_meta(nome_meta: str,valor_meta: int) -> None:
     salvar_json(CAMINHO_METAS,lista_metas)
 
 
-def editar_meta(novo_nome: str, valor_meta: int, valor_id: int) -> bool:
+def editar_meta(novo_nome: str, valor_meta: float, valor_id: int) -> bool:
 
     lista_metas = obter_metas()
 
@@ -85,22 +72,29 @@ def editar_meta(novo_nome: str, valor_meta: int, valor_id: int) -> bool:
     return False
 
 
-def remover_meta():
+def remover_meta(id_meta: int) -> bool:
 
     lista_metas = obter_metas()
 
-    try:
-        deletar_id = int(input("digite o id da meta que deseja remover:"))
-        for meta in lista_metas:
+    for meta in lista_metas:
 
-            if meta["id"] == deletar_id:
-                print("meta removida com sucesso!")
+        if meta["id"] == id_meta:
 
-                lista_metas.remove(meta)
-                salvar_json(CAMINHO_METAS,lista_metas)
-                return
+            lista_metas.remove(meta)
+            salvar_json(CAMINHO_METAS,lista_metas)
 
-    except ValueError:
-        print(f"digite um id valido")
+            return True
+
+    return False
+
+
+def buscar_meta_por_id(id_meta: int):
+    lista_metas = obter_metas()
+
+    for meta in lista_metas:
+        if meta["id"] == id_meta:
+            return meta
+
+    return None
 
 
