@@ -2,6 +2,7 @@ from rich import print
 from rich.prompt import Prompt, FloatPrompt, IntPrompt
 from datetime import datetime
 
+from financeiro.categorias.crud import obter_todas_categorias
 
 def id_transacao() -> int:
 
@@ -18,7 +19,7 @@ def id_transacao() -> int:
             print("[red]ID inválido[/red]")
 
 
-def descricao_trancsacao() -> str:
+def descricao_transacao() -> str:
     while True:
         try:
             descricao = Prompt.ask(
@@ -85,8 +86,49 @@ def tipo_transacao():
             print(erro)
 
 
-def categoria_tranascao():
-    pass
+
+def categoria_transacao():
+    while True:
+        opc_categoria = Prompt.ask(
+            "[green]Deseja adicionar uma categoria? [s/n][/green]"
+        ).strip().lower()
+
+        if opc_categoria == "n":
+            return None
+
+        elif opc_categoria == "s":
+            lista_categorias = obter_todas_categorias()
+
+            if not lista_categorias:
+                print("[yellow]Nenhuma categoria cadastrada.[/yellow]")
+                return None
+
+            print("\nCategorias disponíveis:")
+
+            for categoria in lista_categorias:
+                print(
+                    f'{categoria["id"]} - '
+                    f'{categoria["nome"]}'
+                )
+
+            while True:
+                try:
+                    categoria_id = IntPrompt.ask(
+                        "[green]Digite o ID da categoria[/green]"
+                    )
+
+                except ValueError:
+                    print("[red]Digite um número válido.[/red]")
+                    continue
+
+                for categoria in lista_categorias:
+                    if categoria["id"] == categoria_id:
+                        return categoria_id
+
+                print("[red]ID de categoria não encontrado.[/red]")
+
+        else:
+            print("[red]Digite apenas 's' ou 'n'.[/red]")
 
 
 def data_transacao():

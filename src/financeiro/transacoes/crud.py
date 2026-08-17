@@ -5,10 +5,7 @@ from dados.dados import (
     CAMINHO_CATEGORIAS
     )
 
-"""from financeiro.categorias.crud import (
-    obter_todas_categorias,
-    escolher_categoria,
-    )"""
+from financeiro.categorias.crud import obter_todas_categorias
 
 from utils.id import criar_id
 
@@ -27,32 +24,39 @@ def buscar_transacao(id_buscar: int):
     return None
 
 
-def adicionar_transacao(descricao: str,valor:float, tipo: str, data: str):
+def adicionar_transacao(descricao: str,valor:float, tipo: str,categoria_id, data: str):
 
     lista_transacoes = obter_transacoes()
+
+    if categoria_id is not None:
+
+        lista_categorias = obter_todas_categorias()
+
+        for categoria in lista_categorias:
+            if categoria["id"] == categoria_id:
+                break
+        else:
+            return False
 
     transacao = {
         "id": criar_id(lista_transacoes),
         "descricao": descricao,
         "valor": valor,
         "tipo": tipo,
-        "categoria_id": None,
+        "categoria_id": categoria_id,
         "data": data
     }
 
     lista_transacoes.append(transacao)
 
-    salvar_json(
-        CAMINHO_TRANSACOES,
-        lista_transacoes
-    )
-    return
+    salvar_json(CAMINHO_TRANSACOES, lista_transacoes)
+
+    return True
 
 
-def editar_transacao(id_editar: int, nova_descricao: str, valor: float, tipo_transacao: str, data_nova: str) -> bool:
+def editar_transacao(id_editar: int, nova_descricao: str, valor: float, tipo_transacao: str, categoria_id: int | None, data_nova: str) -> bool:
 
     lista_transacoes = obter_transacoes()
-    #categorias = obter_todas_categorias()
 
     if not lista_transacoes:
         return False
@@ -63,7 +67,7 @@ def editar_transacao(id_editar: int, nova_descricao: str, valor: float, tipo_tra
             transacao["descricao"] = nova_descricao
             transacao["valor"] = valor
             transacao["tipo"] = tipo_transacao
-            transacao["categoria_id"] = None
+            transacao["categoria_id"] = categoria_id
             transacao["data"] = data_nova
 
             salvar_json(CAMINHO_TRANSACOES, lista_transacoes)
