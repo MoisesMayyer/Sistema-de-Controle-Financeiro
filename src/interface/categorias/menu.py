@@ -1,16 +1,18 @@
 from rich.panel import Panel
 from rich.console import Console
 from rich import box
+from rich.table import Table
 
 from interface.categorias.painel import montar_categorias
 
 from financeiro.categorias.crud import (
-    nova_categoria, 
-    remover_categoria, 
-    editar_categoria, 
-    obter_todas_categorias
+    nova_categoria,
+    remover_categoria,
+    editar_categoria,
+    obter_todas_categorias, buscar_categoria
 )
 
+from interface.categorias.inputs import limite_categoria, nome_categoria, id_categoria
 
 console = Console()
 
@@ -42,70 +44,66 @@ def submenu_categorias():
 
             while True:
 
-                try:
-                    nome = console.input("Nome da categoria: ").strip()
+                nome = nome_categoria()
+                limite = limite_categoria()
 
-                    if nome == "":
-                        raise ValueError
+                if nova_categoria(nome, limite):
+                    console.print("[green]Categoria criada![/green]")
+                    break
+                else:
+                    console.print("[red]Erro ao criar categoria![/red]")
 
-                    limite = float(console.input("Limite: "))
 
-                    if limite < 0:
-                        raise ValueError
-
-                    if nova_categoria(nome, limite):
-                        console.print("[green]Categoria criada![/green]")
-                        break
-
-                except ValueError:
-                    console.print("[red]Entrada inválida.[/red]")
-
-            
         elif opcao == 2:
 
             exibir_lista_simples()
 
-            try:
-                id_cat = int(console.input("ID para editar: "))
+            id_cat = id_categoria()
+            categoria = buscar_categoria(id_cat)
 
-                nome = console.input("Novo nome: ").strip()
-
-                if nome =="":
-                    raise ValueError
-
-                limite = float(console.input("Novo limite: "))
-                if limite < 0:
-                    raise ValueError
+            if categoria:
+                nome = nome_categoria()
+                limite = limite_categoria()
 
                 if editar_categoria(id_cat, nome, limite):
                     console.print("[green]Alterado com sucesso![/green]")
 
                 else:
-                    console.print("[red]ID não encontrado.[/red]")
+                    console.print("[red]Não foi possível editar.[/red]")
 
-            except ValueError:
-                console.print("[red]Entrada inválida.[/red]")
+            else:
+                console.print("[red]ID não encontrado.[/red]")
+
 
         elif opcao == 3:
+
             exibir_lista_simples()
 
-            try:
-                id_cat = int(console.input("ID para remover: "))
+            id_cat = id_categoria()
+            categoria = buscar_categoria(id_cat)
+
+            if categoria:
 
                 if remover_categoria(id_cat):
                     console.print("[green]Removido![/green]")
 
                 else:
-                    console.print("[red]ID inexistente ou em uso. Voce nao pode apagar IDs em uso[/red]")
+                    console.print(
+                        "[red]ID inexistente ou em uso. "
+                        "Você não pode apagar IDs em uso.[/red]"
+                    )
 
-            except ValueError:
-                console.print("[red]ID inválido.[/red]")
+            else:
+
+                console.print("[red]ID não encontrado.[/red]")
 
         elif opcao == 4:
             break
 
         else:
             console.print("[red]Opção inexistente![/red]")
+
+
 
 def exibir_lista_simples():
 
@@ -115,5 +113,21 @@ def exibir_lista_simples():
         console.print("[yellow]Nenhuma categoria disponível.[/yellow]")
         return
 
-    for c in categorias:
-        console.print(f"ID: {c['id']} | Nome: {c['nome']}")
+    tabela = Table(
+        title="Categorias",
+        show_header=True,
+        header_style="bold cyan"
+    )
+
+    tabela.add_column("ID", justify="center")
+    tabela.add_column("Nome")
+    tabela.add_column("Limite", justify="right")
+
+    for categoria in categorias:
+        tabela.add_row(
+            str(categoria["id"]),
+            categoria["nome"],
+            f"R$ {categoria['limite']:.2f}"
+        )
+
+    console.print(tabela)

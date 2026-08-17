@@ -56,7 +56,7 @@ def calcular_gasto_categoria(id_categoria):
 
     for transacao in lista_transacoes:
 
-        if transacao['categoria_id'] == id_categoria:
+        if transacao['categoria_id'] == id_categoria and transacao["tipo"] == "despesa":
             total += transacao["valor"]
 
     return total
