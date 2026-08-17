@@ -196,13 +196,20 @@ def tela_metas() -> None:
         elif escolha == "2":
 
             id_meta = input_id()
-            valor = input_valor("Digite o valor a ser adicionado: ")
-            sucesso = adicionar_valor_meta(id_meta, valor)
 
-            if sucesso:
-                print(f"[green]Vaor adicionado com sucesso![/green]")
+            meta = buscar_meta_por_id(id_meta)
+
+            if meta is None:
+                print("[red]Meta não encontrada.[/red]")
+
             else:
-                print(f"[red]Não foi possivel adicionar este valor![/red]")
+                valor = input_valor("Digite o valor a ser adicionado: ")
+                sucesso = adicionar_valor_meta(id_meta, valor)
+
+                if sucesso:
+                    print(f"[green]Vaor adicionado com sucesso![/green]")
+                else:
+                    print(f"[red]Não foi possivel adicionar este valor![/red]")
 
         elif escolha == "3":
 

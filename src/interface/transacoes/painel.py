@@ -11,7 +11,6 @@ from dados.dados import (
     )
 
 from financeiro.transacoes.calculos import obter_resumo
-
 from financeiro.transacoes.crud import buscar_nome_categoria
 
 console = Console()

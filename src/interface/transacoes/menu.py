@@ -1,13 +1,15 @@
 from rich.console import Console
 from rich.panel import Panel
 from rich import box
+from rich import print
 
 from financeiro.transacoes.crud import (
     adicionar_transacao,
     editar_transacao,
-    remover_transacao
+    remover_transacao,
+    buscar_transacao
 )
-
+from interface.transacoes.inputs import id_transacao,descricao_trancsacao, valor_transacao, data_transacao, tipo_transacao
 
 console = Console()
 
@@ -35,21 +37,38 @@ def submenu_transacoes():
             opcao = int(input("Digite sua opção: "))
 
         except ValueError:
-            print("Opção inválida!")
+            print(f"[red]Opção inválida![/red]")
             continue
 
-
         if opcao == 1:
-            adicionar_transacao()
-            break
+
+            descricao = descricao_trancsacao()
+            valor = valor_transacao()
+            tipo = tipo_transacao()
+            data = data_transacao()
+
+            adicionar_transacao(descricao, valor, tipo, data)
 
         elif opcao == 2:
-            editar_transacao()
-            break
+            transacao_id = id_transacao()
+
+            transacao = buscar_transacao(transacao_id)
+
+            if transacao is None:
+                print("ID não encontrado.")
+            else:
+                descricao = descricao_trancsacao()
+                valor = valor_transacao()
+                tipo = tipo_transacao()
+                data = data_transacao()
+
+                sucesso = editar_transacao(transacao_id, descricao, valor, tipo, data)
+
+                if sucesso:
+                    print("Transação editada com sucesso!")
 
         elif opcao == 3:
             remover_transacao()
-            break
 
         elif opcao == 4:
             break
