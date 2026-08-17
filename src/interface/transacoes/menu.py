@@ -68,7 +68,14 @@ def submenu_transacoes():
                     print("Transação editada com sucesso!")
 
         elif opcao == 3:
-            remover_transacao()
+            id_remover = id_transacao()
+
+            sucesso = remover_transacao(id_remover)
+
+            if sucesso:
+                print("Transação removida com sucesso!")
+            else:
+                print("ID não encontrado.")
 
         elif opcao == 4:
             break

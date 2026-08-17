@@ -12,7 +12,6 @@ from dados.dados import (
 
 from utils.id import criar_id
 
-from financeiro.transacoes.calculos import total_receitas
 
 def obter_transacoes():
     return carregar_json(CAMINHO_TRANSACOES)
@@ -74,47 +73,22 @@ def editar_transacao(id_editar: int, nova_descricao: str, valor: float, tipo_tra
     return False
 
 
-def remover_transacao():
+def remover_transacao(id_remover: int) -> bool:
 
     lista_transacoes = obter_transacoes()
 
     if not lista_transacoes:
-        print("Nenhuma transação registrada.")
-        return
-
-    while True:
-        try:
-            id_remover = int(input("Digite o ID que deseja remover: "))
-            break
-        except ValueError:
-            print("Digite apenas números.")
+        return False
 
     for transacao in lista_transacoes:
+
         if transacao["id"] == id_remover:
             lista_transacoes.remove(transacao)
+
             salvar_json(CAMINHO_TRANSACOES,lista_transacoes)
+            return True
 
-            print("Transação removida com sucesso!")
-            return
-
-    print("Transação não encontrada.")
-
-
-def total_despesas():
-    lista_transacoes = obter_transacoes()
-
-    if not lista_transacoes:
-        print("Nenhuma transação registrada.")
-        return
-
-    total = 0
-
-    for transacao in lista_transacoes:
-        if transacao["tipo"] == "despesa":
-            total += transacao["valor"]
-
-    print(f"Total de despesas: R$ {total:.2f}")
-    print(f"Total de receita: R$ {total_receitas()}")
+    return False
 
 
 def buscar_nome_categoria(categoria_id):
