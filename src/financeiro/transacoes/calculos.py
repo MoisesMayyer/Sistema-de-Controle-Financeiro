@@ -30,18 +30,8 @@ def saldo_atual():
 
 
 def obter_resumo():
-    transacoes = carregar_json(CAMINHO_TRANSACOES)
-
-    receitas = 0
-    despesas = 0
-
-
-    for transacao in transacoes:
-        if transacao["tipo"] == "receita":
-            receitas += transacao["valor"]
-
-        elif transacao["tipo"] == "despesa":
-            despesas += transacao["valor"]
+    receitas = total_receitas()
+    despesas = total_despesas()
 
     return {
         "saldo": receitas - despesas,
