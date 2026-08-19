@@ -108,6 +108,4 @@ Contribuições são bem-vindas. Recomendações:
 - Crie branches com nomes descritivos (`feature/tests-transacoes`, `feature/fastapi-api`).
 - Adicione testes para qualquer nova funcionalidade.
 
-## Licença
 
-Escolha uma licença apropriada (por exemplo MIT) e adicione um arquivo `LICENSE` se desejar abrir o projeto publicamente.
