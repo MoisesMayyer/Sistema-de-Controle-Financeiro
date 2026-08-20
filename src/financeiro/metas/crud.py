@@ -38,7 +38,7 @@ def adicionar_valor_meta(id_meta, valor_adicionado: float) -> bool:
     return False
 
 
-def adicionar_meta(nome_meta: str,valor_meta: float) -> None:
+def adicionar_meta(nome_meta: str,valor_meta: float) -> bool:
 
     lista_metas = obter_metas()
 
@@ -52,6 +52,7 @@ def adicionar_meta(nome_meta: str,valor_meta: float) -> None:
     lista_metas.append(metas)
 
     salvar_json(CAMINHO_METAS,lista_metas)
+    return True
 
 
 def editar_meta(novo_nome: str, valor_meta: float, valor_id: int) -> bool:

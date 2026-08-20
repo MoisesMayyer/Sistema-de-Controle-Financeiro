@@ -161,8 +161,8 @@ def mostrar_metas(metas: list[dict]) -> None:
             id_meta=meta["id"],
             nome=meta["nome"],
             porcentagem=calcular_porcentagem_meta(
-                meta["valor_atual"],
-                meta["valor_meta"]
+            meta["valor_atual"],
+            meta["valor_meta"]
             )
         )
         for meta in metas

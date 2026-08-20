@@ -56,3 +56,27 @@ def mock_categorias():
         "limite": 500.0
     }
 ]
+
+
+@pytest.fixture
+def mock_metas():
+    return [
+        {
+            "id": 1,
+            "nome": "computador",
+            "valor_atual": 600.0,
+            "valor_meta": 1200.0
+        },
+        {
+            "id": 2,
+            "nome": "carro",
+            "valor_atual": 0,
+            "valor_meta": 120000.0
+        },
+        {
+            "id": 3,
+            "nome": "casa",
+            "valor_atual": 100.0,
+            "valor_meta": 100.0
+        }
+    ]
