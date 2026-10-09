@@ -1,116 +1,48 @@
-# Controle Financeiro API
+# Sistema de Controle Financeiro
 
-> 📚 **Projeto de estudo** — Meu primeiro projeto de programação, refatorado para **FastAPI**.
+> ⚠️ **Projeto pausado** — Estou aprendendo FastAPI e vou retomar este projeto quando souber criar boas APIs.
 
-Este projeto nasceu quando comecei a aprender programação (versão original em Python com JSON/terminal). Agora foi completamente reescrito para aprender **FastAPI**, **SQLAlchemy** e **Pydantic**.
+---
 
-API REST para controle pessoal de finanças construída com **FastAPI**, **SQLAlchemy** e **SQLite**.
+Aplicação de terminal em Python para controle pessoal de despesas, receitas, categorias e metas. Interface construída com Rich para telas amigáveis no terminal. Armazenamento via JSON em `src/dados`.
 
-## Tecnologias
-
-- **FastAPI** - Framework web moderno e rápido
-- **SQLAlchemy 2.0** - ORM com tipagem estática
-- **Pydantic v2** - Validação e serialização de dados
-- **SQLite** - Banco de dados leve (arquivo único)
-- **Uvicorn** - Servidor ASGI
-
-## Estrutura do Projeto
+## Estrutura principal
 
 ```
 src/
-├── main.py                    # App FastAPI + criação de tabelas
-├── dados/                     # Camada de dados
-│   ├── __init__.py
-│   ├── database.py           # Engine, Base, SessionLocal
-│   ├── dependencies.py       # Dependency get_db()
-│   ├── models/               # Models SQLAlchemy (tabelas)
-│   │   ├── __init__.py
-│   │   ├── transacao.py      # Transacao + TipoTransacao (enum)
-│   │   ├── categoria.py      # Categoria
-│   │   └── meta.py           # Meta
-│   └── schemas/              # Schemas Pydantic (validação)
-│       ├── __init__.py
-│       ├── transacao.py      # Create/Update/Response
-│       ├── categoria.py      # Create/Update/Response
-│       └── meta.py           # Create/Update/Response
-└── rotas/                    # Endpoints da API
-    ├── __init__.py
-    ├── transacoes/
-    │   ├── __init__.py
-    │   └── crud.py           # CRUD completo
-    ├── categorias/
-    │   ├── __init__.py
-    │   └── crud.py           # CRUD completo
-    └── metas/
-        ├── __init__.py
-        └── crud.py           # CRUD + adicionar_valor
+├── __main__.py          # Ponto de entrada (python -m src)
+├── dados/               # JSON storage (gastos.json, categorias.json, metas.json)
+├── financeiro/          # Regras de negócio
+│   ├── transacoes/      # CRUD + cálculos
+│   ├── categorias/      # CRUD categorias
+│   └── metas/           # CRUD + progresso
+├── interface/           # Telas e painéis com Rich
+└── utils/               # Utilitários (IDs, etc.)
 ```
 
-## Endpoints
+## Funcionalidades
 
-### Transações (`/transacoes`)
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/` | Lista todas |
-| GET | `/{id}` | Busca por ID |
-| POST | `/` | Cria nova |
-| PUT | `/{id}` | Atualiza |
-| DELETE | `/{id}` | Remove |
+- CRUD de transações (despesa/receita) com data e categoria
+- Listagem colorida de últimas transações
+- Totais de receitas, despesas e saldo
+- CRUD de categorias (com proteção contra remoção de categorias em uso)
+- CRUD de metas com barras de progresso
+- Persistência JSON defensiva
+- Interface de terminal baseada em menus
 
-### Categorias (`/categorias`)
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/` | Lista todas |
-| GET | `/{id}` | Busca por ID |
-| POST | `/` | Cria nova |
-| PUT | `/{id}` | Atualiza |
-| DELETE | `/{id}` | Remove (bloqueia se tiver transações) |
-
-### Metas (`/metas`)
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/` | Lista todas (com % progresso) |
-| GET | `/{id}` | Busca por ID |
-| POST | `/` | Cria nova |
-| PUT | `/{id}` | Atualiza |
-| DELETE | `/{id}` | Remove |
-| POST | `/{id}/adicionar-valor` | Adiciona valor à meta |
-
-## Validações
-
-- **Transação**: valor > 0, tipo = `receita` ou `despesa`, data obrigatória
-- **Categoria**: nome único, limite > valor_inicial
-- **Meta**: valor_final > valor_inicial, data_fim > data_inicio
-- **Integridade**: não remove categoria com transações associadas
-
-## Como Executar
+## Como executar
 
 ```bash
-# Instalar dependências
-pip install fastapi uvicorn sqlalchemy pydantic
-
-# Rodar servidor
-cd src
-python -m uvicorn main:app --reload
-
-# Acessar documentação
-# http://localhost:8000/docs  (Swagger UI)
-# http://localhost:8000/redoc  (ReDoc)
+python -m pip install rich
+python -m src
 ```
 
-## Banco de Dados
+## Próximos passos (quando retomar)
 
-O arquivo `financeiro.db` é criado automaticamente na pasta `src/` na primeira execução.
+1. Finalizar testes com pytest
+2. Implementar API REST com FastAPI
+3. Desenvolver frontend consumindo a API
 
-Tabelas:
-- `transacoes` - id, descricao, valor, tipo, data, categoria_id (FK)
-- `categorias` - id, nome, valor_inicial, valor_limite
-- `metas` - id, nome, valor_inicial, valor_final, data_inicio, data_fim
+---
 
-## Qualidade de Código
-
-```bash
-# Verificação de tipos (mypy)
-python -m mypy --ignore-missing-imports --explicit-package-bases src
-# Success: no issues found in 20 source files
-```
+*Projeto deixado de lado temporariamente para focar no aprendizado de FastAPI. Volto quando dominar criação de APIs bem estruturadas.*
