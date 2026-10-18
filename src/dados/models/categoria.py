@@ -10,6 +10,4 @@ class Categoria(Base):
     nome = Column(String(100), unique=True, nullable=False)
     valor_inicial = Column(Float, default=0, nullable=False)
     valor_limite = Column(Float, nullable=False)
-
-    # Relacionamento com transações
     transacoes = relationship("Transacao", back_populates="categoria")

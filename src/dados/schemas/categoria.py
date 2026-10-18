@@ -8,7 +8,6 @@ class CategoriaBase(BaseModel):
     valor_inicial: Decimal = Field(default=Decimal("0"), ge=0, decimal_places=2)
     valor_limite: Decimal = Field(..., gt=0, decimal_places=2)
 
-    # Validação: limite deve ser maior que valor inicial
     @field_validator("valor_limite")
     @classmethod
     def limite_maior_que_inicial(cls, v, info):

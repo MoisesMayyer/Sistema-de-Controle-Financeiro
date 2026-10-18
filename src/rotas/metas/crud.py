@@ -10,7 +10,6 @@ router_meta = APIRouter(prefix="/metas", tags=["Metas"])
 
 
 def calcular_porcentagem_meta(valor_atual: float, valor_final: float) -> Decimal:
-    """Calcula a porcentagem da meta."""
     if valor_final == 0:
         return Decimal("0")
     porcentagem = (valor_atual / valor_final) * 100
@@ -18,7 +17,6 @@ def calcular_porcentagem_meta(valor_atual: float, valor_final: float) -> Decimal
 
 
 def meta_to_response(meta: Meta) -> MetaResponse:
-    """Converte model Meta para schema MetaResponse."""
     return MetaResponse(
         id=meta.id,
         nome=meta.nome,
@@ -32,14 +30,12 @@ def meta_to_response(meta: Meta) -> MetaResponse:
 
 @router_meta.get("/", response_model=list[MetaResponse])
 def listar_metas(db: Session = Depends(get_db)):
-    """Lista todas as metas."""
     metas = db.query(Meta).all()
     return [meta_to_response(m) for m in metas]
 
 
 @router_meta.get("/{id}", response_model=MetaResponse)
 def buscar_meta(id: int, db: Session = Depends(get_db)):
-    """Busca uma meta pelo ID."""
     meta = db.query(Meta).filter(Meta.id == id).first()
     if not meta:
         raise HTTPException(status_code=404, detail="Meta não encontrada")
@@ -48,7 +44,6 @@ def buscar_meta(id: int, db: Session = Depends(get_db)):
 
 @router_meta.post("/", response_model=MetaResponse, status_code=201)
 def criar_meta(dados: MetaCreate, db: Session = Depends(get_db)):
-    """Cria uma nova meta."""
     meta = Meta(
         nome=dados.nome,
         valor_inicial=float(dados.valor_inicial),
@@ -64,7 +59,6 @@ def criar_meta(dados: MetaCreate, db: Session = Depends(get_db)):
 
 @router_meta.put("/{id}", response_model=MetaResponse)
 def editar_meta(id: int, dados: MetaUpdate, db: Session = Depends(get_db)):
-    """Atualiza uma meta existente."""
     meta = db.query(Meta).filter(Meta.id == id).first()
     if not meta:
         raise HTTPException(status_code=404, detail="Meta não encontrada")
@@ -82,7 +76,6 @@ def editar_meta(id: int, dados: MetaUpdate, db: Session = Depends(get_db)):
 
 @router_meta.delete("/{id}")
 def remover_meta(id: int, db: Session = Depends(get_db)):
-    """Remove uma meta."""
     meta = db.query(Meta).filter(Meta.id == id).first()
     if not meta:
         raise HTTPException(status_code=404, detail="Meta não encontrada")
@@ -93,7 +86,6 @@ def remover_meta(id: int, db: Session = Depends(get_db)):
 
 @router_meta.post("/{id}/adicionar-valor", response_model=MetaResponse)
 def adicionar_valor_meta(id: int, valor: Decimal = Body(..., embed=True), db: Session = Depends(get_db)):
-    """Adiciona valor a uma meta."""
     meta = db.query(Meta).filter(Meta.id == id).first()
     if not meta:
         raise HTTPException(status_code=404, detail="Meta não encontrada")

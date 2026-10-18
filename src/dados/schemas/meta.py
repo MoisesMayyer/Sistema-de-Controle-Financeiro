@@ -11,7 +11,6 @@ class MetaBase(BaseModel):
     data_inicio: Optional[date] = None
     data_fim: Optional[date] = None
 
-    # Validação: valor_final deve ser maior que valor_inicial
     @field_validator("valor_final")
     @classmethod
     def final_maior_que_inicial(cls, v, info):
@@ -19,7 +18,6 @@ class MetaBase(BaseModel):
             raise ValueError("valor_final deve ser maior que valor_inicial")
         return v
 
-    # Validação: data_fim deve ser posterior a data_inicio
     @field_validator("data_fim")
     @classmethod
     def fim_depois_inicio(cls, v, info):
