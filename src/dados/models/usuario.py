@@ -11,6 +11,7 @@ class Usuario(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     senha_hash = Column(String(255), nullable=False)
     ativo = Column(Boolean, default=True, nullable=False)
+    admin = Column(Boolean, default=False, nullable=False)
 
     categorias = relationship("Categoria", back_populates="usuario", cascade="all, delete-orphan")
     transacoes = relationship("Transacao", back_populates="usuario", cascade="all, delete-orphan")

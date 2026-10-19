@@ -3,7 +3,7 @@ from dados.database import Base, engine
 from rotas.transacoes.crud import router_transacao
 from rotas.categorias.crud import router_categoria
 from rotas.metas.crud import router_meta
-
+from rotas.usuarios.crud import router_usuario
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Controle Financeiro API")
@@ -11,7 +11,7 @@ app = FastAPI(title="Controle Financeiro API")
 app.include_router(router_transacao)
 app.include_router(router_categoria)
 app.include_router(router_meta)
-
+app.include_router(router_usuario)
 
 @app.get("/")
 async def read_root():
