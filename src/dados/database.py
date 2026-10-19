@@ -1,12 +1,9 @@
-import os
-
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-load_dotenv()
+from dados.config import settings
 
-DATABASE_URL = os.getenv("BANCODADOS", "sqlite:///./financeiro.db")
+DATABASE_URL = settings.banco_dados
 
 engine = create_engine(
     DATABASE_URL,
