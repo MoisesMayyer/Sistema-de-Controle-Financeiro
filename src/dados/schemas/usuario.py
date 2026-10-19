@@ -20,7 +20,7 @@ class UsuarioCreate(UsuarioBase):
 
 
 class UsuarioUpdate(BaseModel):
-    nome: Optional[str] = Field(None, description="nome do usuario")
+    nome: Optional[str] = Field(None, min_length=3, max_length=100, description="nome do usuario")
     email: Optional[EmailStr] = Field(None, description="email do usuario")
     senha: Optional[str] = Field(None, min_length=6, description="senha do usuario")
     ativo: Optional[bool] = Field(None, description="ativo do usuario")

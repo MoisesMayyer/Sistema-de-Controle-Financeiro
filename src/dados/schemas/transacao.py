@@ -26,6 +26,7 @@ class TransacaoUpdate(BaseModel):
 
 class TransacaoResponse(TransacaoBase):
     id: int
+    usuario_id: int
 
     class Config:
         from_attributes = True

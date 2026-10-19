@@ -7,16 +7,14 @@ class CategoriaBase(BaseModel):
     valor_inicial: float = Field(default=0.0, ge=0)
     valor_limite: float = Field(..., gt=0)
 
+
+class CategoriaCreate(CategoriaBase):
     @field_validator("valor_limite")
     @classmethod
     def limite_maior_que_inicial(cls, v, info):
         if "valor_inicial" in info.data and v <= info.data["valor_inicial"]:
             raise ValueError("valor_limite deve ser maior que valor_inicial")
         return v
-
-
-class CategoriaCreate(CategoriaBase):
-    pass
 
 
 class CategoriaUpdate(BaseModel):
@@ -27,6 +25,7 @@ class CategoriaUpdate(BaseModel):
 
 class CategoriaResponse(CategoriaBase):
     id: int
+    usuario_id: int
     total_despesas: float = Field(default=0.0, ge=0)
     total_receitas: float = Field(default=0.0, ge=0)
     saldo: float = 0.0

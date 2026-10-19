@@ -10,11 +10,13 @@ class MetaBase(BaseModel):
     data_inicio: Optional[date] = None
     data_fim: Optional[date] = None
 
+
+class MetaCreate(MetaBase):
     @field_validator("valor_final")
     @classmethod
     def final_maior_que_inicial(cls, v, info):
-        if "valor_inicial" in info.data and v <= info.data["valor_inicial"]:
-            raise ValueError("valor_final deve ser maior que valor_inicial")
+        if "valor_inicial" in info.data and v < info.data["valor_inicial"]:
+            raise ValueError("valor_final não pode ser menor que valor_inicial")
         return v
 
     @field_validator("data_fim")
@@ -23,10 +25,6 @@ class MetaBase(BaseModel):
         if v and "data_inicio" in info.data and info.data["data_inicio"] and v <= info.data["data_inicio"]:
             raise ValueError("data_fim deve ser posterior a data_inicio")
         return v
-
-
-class MetaCreate(MetaBase):
-    pass
 
 
 class MetaUpdate(BaseModel):
@@ -39,6 +37,7 @@ class MetaUpdate(BaseModel):
 
 class MetaResponse(MetaBase):
     id: int
+    usuario_id: int
     porcentagem: float = Field(default=0.0, ge=0, le=100)
 
     class Config:
