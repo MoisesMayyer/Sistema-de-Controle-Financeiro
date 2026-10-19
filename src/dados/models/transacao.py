@@ -19,4 +19,7 @@ class Transacao(Base):
     tipo: "TipoTransacao" = Column(SQLEnum(TipoTransacao), nullable=False)  # type: ignore
     data: date = Column(Date, nullable=False)  # type: ignore[assignment]
     categoria_id: int | None = Column(Integer, ForeignKey("categorias.id"), nullable=True)  # type: ignore[assignment]
+    usuario_id: int = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)  # type: ignore[assignment]
+
+    usuario = relationship("Usuario", back_populates="transacoes")
     categoria = relationship("Categoria", back_populates="transacoes")

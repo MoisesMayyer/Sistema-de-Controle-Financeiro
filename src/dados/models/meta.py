@@ -1,5 +1,6 @@
 from datetime import date
-from sqlalchemy import Column, Integer, String, Float, Date
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
+from sqlalchemy.orm import relationship
 from dados.database import Base
 
 
@@ -12,3 +13,6 @@ class Meta(Base):
     valor_final = Column(Float, nullable=False)
     data_inicio: date | None = Column(Date, nullable=True)  # type: ignore[assignment]
     data_fim: date | None = Column(Date, nullable=True)  # type: ignore[assignment]
+    usuario_id: int = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)  # type: ignore[assignment]
+
+    usuario = relationship("Usuario", back_populates="metas")
