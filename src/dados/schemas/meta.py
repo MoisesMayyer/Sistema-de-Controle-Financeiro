@@ -1,13 +1,12 @@
 from datetime import date
-from decimal import Decimal
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 
 class MetaBase(BaseModel):
     nome: str = Field(..., min_length=1, max_length=100)
-    valor_inicial: Decimal = Field(default=Decimal("0"), ge=0, decimal_places=2)
-    valor_final: Decimal = Field(..., gt=0, decimal_places=2)
+    valor_inicial: float = Field(default=0.0, ge=0)
+    valor_final: float = Field(..., gt=0)
     data_inicio: Optional[date] = None
     data_fim: Optional[date] = None
 
@@ -32,15 +31,15 @@ class MetaCreate(MetaBase):
 
 class MetaUpdate(BaseModel):
     nome: Optional[str] = Field(None, min_length=1, max_length=100)
-    valor_inicial: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
-    valor_final: Optional[Decimal] = Field(None, gt=0, decimal_places=2)
+    valor_inicial: Optional[float] = Field(None, ge=0)
+    valor_final: Optional[float] = Field(None, gt=0)
     data_inicio: Optional[date] = None
     data_fim: Optional[date] = None
 
 
 class MetaResponse(MetaBase):
     id: int
-    porcentagem: Decimal = Field(default=Decimal("0"), ge=0, le=100)
+    porcentagem: float = Field(default=0.0, ge=0, le=100)
 
     class Config:
         from_attributes = True

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from dados.dependencies import get_db
-from dados.models import Transacao
+from dados.models import Categoria, Transacao
 from dados.schemas import TransacaoCreate, TransacaoUpdate, TransacaoResponse
 
 router_transacao = APIRouter(prefix="/transacoes", tags=["Transações"])
@@ -24,18 +24,19 @@ def buscar_transacao(id: int, db: Session = Depends(get_db)):
 
 @router_transacao.post("/", response_model=TransacaoResponse, status_code=201)
 def adicionar_transacao(dados: TransacaoCreate, db: Session = Depends(get_db)):
-    if dados.categoria_id:
-        from dados.models import Categoria
-        categoria = db.query(Categoria).filter(Categoria.id == dados.categoria_id).first()
+    categoria_id = dados.categoria_id
+
+    if categoria_id is not None:
+        categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
         if not categoria:
             raise HTTPException(status_code=400, detail="Categoria não encontrada")
 
     transacao = Transacao(
         descricao=dados.descricao,
-        valor=float(dados.valor),
+        valor=dados.valor,
         tipo=dados.tipo,
         data=dados.data,
-        categoria_id=dados.categoria_id,
+        categoria_id=categoria_id,
     )
     db.add(transacao)
     db.commit()
@@ -50,16 +51,12 @@ def editar_transacao(id: int, dados: TransacaoUpdate, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Transação não encontrada")
 
     if dados.categoria_id is not None:
-        from dados.models import Categoria
-        if dados.categoria_id > 0:
-            categoria = db.query(Categoria).filter(Categoria.id == dados.categoria_id).first()
-            if not categoria:
-                raise HTTPException(status_code=400, detail="Categoria não encontrada")
+        categoria = db.query(Categoria).filter(Categoria.id == dados.categoria_id).first()
+        if not categoria:
+            raise HTTPException(status_code=400, detail="Categoria não encontrada")
 
     update_data = dados.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        if field == "valor" and value is not None:
-            value = float(value)
         setattr(transacao, field, value)
 
     db.commit()
