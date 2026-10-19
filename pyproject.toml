@@ -14,6 +14,8 @@ dependencies = [
     "pydantic",
     "pydantic-settings",
     "python-dotenv",
+    "pwdlib[argon2]",
+    "PyJWT",
 ]
 
 [project.optional-dependencies]
