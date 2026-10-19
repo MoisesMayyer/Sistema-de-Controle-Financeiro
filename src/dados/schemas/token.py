@@ -1,1 +1,6 @@
-# Schemas Pydantic de autenticação: Token e TokenData.
+from pydantic import BaseModel
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

@@ -31,7 +31,7 @@ class UsuarioResponse(BaseModel):
     nome: str
     email: EmailStr
     ativo: bool
-
+    admin: bool
 
     class Config:
         from_attributes = True
