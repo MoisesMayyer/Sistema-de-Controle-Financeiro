@@ -3,11 +3,10 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from dados.config import settings
 
-DATABASE_URL = settings.banco_dados
+DATABASE_URL = settings.database_url
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},
     echo=False,
 )
 

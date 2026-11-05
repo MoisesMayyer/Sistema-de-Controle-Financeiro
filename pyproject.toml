@@ -16,6 +16,8 @@ dependencies = [
     "python-dotenv",
     "pwdlib[argon2]",
     "PyJWT",
+    "email-validator",
+    "python-multipart",
 ]
 
 [project.optional-dependencies]

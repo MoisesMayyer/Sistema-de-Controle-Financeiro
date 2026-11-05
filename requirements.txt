@@ -1,0 +1,20 @@
+# Dependências de runtime do Controle Financeiro API
+# Instaladas e validadas em Python 3.14.8
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+sqlalchemy==2.1.8
+pydantic==2.14.3
+pydantic-settings==2.16.2
+python-dotenv==1.2.4
+pwdlib[argon2]==0.3.1
+PyJWT==2.15.1
+email-validator==2.3.0
+python-multipart==0.0.33
+
+# Banco de dados e migrações
+psycopg[binary]==3.3.8
+alembic==1.20.1
+
+# Testes
+pytest==9.2.0
+httpx==0.28.1

@@ -6,10 +6,12 @@ API REST de controle financeiro pessoal **multi-usuário**, com autenticação J
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.143-009688?logo=fastapi&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.1-D71F00)
 ![Pydantic](https://img.shields.io/badge/Pydantic-2.14-E92063)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
+![Alembic](https://img.shields.io/badge/Alembic-1.20-6BA81E)
 ![mypy](https://img.shields.io/badge/mypy-passing-2A6DB0)
 ![testes](https://img.shields.io/badge/testes-automatizados%20em%20constru%C3%A7%C3%A3o-yellow)
 
-> **Projeto de estudo e portfólio.** Nasceu como um controle financeiro de terminal em JSON e foi reescrito para aprender **FastAPI**, **SQLAlchemy** e **Pydantic**.
+> **Projeto de estudo e portfólio.** Nasceu como um controle financeiro de terminal em JSON e foi reescrito para aprender **FastAPI**, **SQLAlchemy**, **Pydantic**, **PostgreSQL** e **Alembic**.
 
 ## Sumário
 
@@ -48,7 +50,8 @@ O diferencial é o **multi-usuário**: cada conta vê apenas os próprios dados,
 | Framework | FastAPI 0.143 |
 | ORM | SQLAlchemy 2.1 |
 | Validação/serialização | Pydantic 2.14 + pydantic-settings |
-| Banco | SQLite |
+| Banco | PostgreSQL 18 |
+| Migrações | Alembic 1.20 |
 | Servidor | Uvicorn |
 | Hash de senha | pwdlib (Argon2) |
 | Token | PyJWT (HS256) |
@@ -56,7 +59,7 @@ O diferencial é o **multi-usuário**: cada conta vê apenas os próprios dados,
 
 ## Como rodar
 
-**Requisitos:** Python 3.10 ou superior e `git`.
+**Requisitos:** Python 3.10 ou superior, PostgreSQL 18 e `git`.
 
 ```bash
 # 1. Clone
@@ -67,8 +70,8 @@ cd controle-financeiro
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
-# 3. Dependências (inclui dev)
-pip install -e ".[dev]"
+# 3. Dependências
+pip install -r requirements.txt
 
 # 4. Configuração
 cp .env.example .env
@@ -79,29 +82,33 @@ python -c "import secrets; print(secrets.token_hex(32))"
 O `.env` deve ficar assim:
 
 ```env
-BANCODADOS=sqlite:///./financeiro.db
+DATABASE_URL=postgresql+psycopg://postgres:senha@localhost:5432/controle_financeiro
 SECRET_KEY=<a chave gerada acima>
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
 
 ```bash
-# 5. Servidor (de dentro de src/)
+# 5. Banco e migrações (a partir da raiz do projeto)
+createdb -h localhost -U postgres controle_financeiro  # se ainda não existir
+alembic upgrade head
+
+# 6. Servidor (de dentro de src/)
 cd src
 uvicorn main:app --reload
 ```
 
 Acesse **http://localhost:8000/docs** para a documentação interativa.
 
-> **Banco:** caminho relativo — de `src/`, nasce em `src/financeiro.db`. As tabelas são criadas no primeiro start; para resetar, pare o servidor e apague o arquivo.
+> **Banco:** PostgreSQL. O schema é criado e versionado pelas migrações do Alembic (`alembic upgrade head`); a aplicação não executa `create_all`.
 
 ### Primeiro usuário admin
 
 Nenhuma rota promove usuários a admin. Defina o primeiro direto no banco, após criar a conta pela API:
 
 ```bash
-# a partir da raiz do projeto
-sqlite3 src/financeiro.db "UPDATE usuarios SET admin = 1 WHERE id = 1;"
+# a partir da raiz do projeto (use as credenciais do DATABASE_URL)
+psql -h localhost -U postgres -d controle_financeiro -c "UPDATE usuarios SET admin = 1 WHERE id = 1;"
 ```
 
 ## Como usar
@@ -289,31 +296,35 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 ## Estrutura do projeto
 
 ```
-src/
-├── main.py                      # App, create_all e routers
-├── financeiro.db                # SQLite gerado em runtime
-├── dados/
-│   ├── config.py                # Settings do .env
-│   ├── database.py              # Engine, Base e SessionLocal
-│   ├── dependencies.py          # get_db e verificar_token
-│   ├── security.py              # Argon2 e JWT
-│   ├── models/                  # Tabelas SQLAlchemy
-│   │   ├── usuario.py
-│   │   ├── transacao.py
-│   │   ├── categoria.py
-│   │   └── meta.py
-│   └── schemas/                 # Schemas Pydantic
-│       ├── usuario.py
-│       ├── token.py
-│       ├── transacao.py
-│       ├── categoria.py
-│       └── meta.py
-└── rotas/
-    ├── auth/crud.py             # Login e /me
-    ├── usuarios/crud.py
-    ├── transacoes/crud.py
-    ├── categorias/crud.py       # Agregados
-    └── metas/crud.py            # Aporte
+.
+├── alembic.ini                  # Configuração do Alembic
+├── migrations/                  # Migrações do banco
+│   ├── env.py
+│   └── versions/                # Revisões
+└── src/
+    ├── main.py                  # App e routers
+    ├── dados/
+    │   ├── config.py            # Settings do .env
+    │   ├── database.py          # Engine, Base e SessionLocal
+    │   ├── dependencies.py      # get_db e verificar_token
+    │   ├── security.py          # Argon2 e JWT
+    │   ├── models/              # Tabelas SQLAlchemy
+    │   │   ├── usuario.py
+    │   │   ├── transacao.py
+    │   │   ├── categoria.py
+    │   │   └── meta.py
+    │   └── schemas/             # Schemas Pydantic
+    │       ├── usuario.py
+    │       ├── token.py
+    │       ├── transacao.py
+    │       ├── categoria.py
+    │       └── meta.py
+    └── rotas/
+        ├── auth/crud.py         # Login e /me
+        ├── usuarios/crud.py
+        ├── transacoes/crud.py
+        ├── categorias/crud.py   # Agregados
+        └── metas/crud.py        # Aporte
 ```
 
 ## Decisões técnicas
@@ -326,7 +337,7 @@ src/
 
 **Isolamento por `usuario_id` na query, com `404`.** Evita confirmar dados de outra conta; `/usuarios` usa `403`.
 
-**`create_all` em vez de Alembic.** Banco pessoal recriável; em produção, migrations versionadas.
+**Alembic em vez de `create_all`.** O schema é versionado por migrações; a aplicação não cria tabelas na inicialização.
 
 **`float` em vez de `Decimal`.** Controle pessoal, não contabilidade; em produção, `Decimal` ou centavos evitariam arredondamentos.
 
@@ -352,18 +363,13 @@ Itens conhecidos, em ordem de prioridade:
 - [ ] Relatório mensal de receitas e despesas
 
 **Qualidade**
-
-- [ ] Migrations com Alembic
+- [X] Migrations com Alembic
 - [ ] `criado_em` / `atualizado_em` (auditoria)
 - [ ] `model_config = ConfigDict(from_attributes=True)` no lugar do `class Config` (depreciado no Pydantic v2)
-- [ ] `selectinload` nos agregados (evitar N+1)
-- [ ] Tratamento global de exceções e logging
-- [ ] Prefixo de versão `/v1`
 
 **Produção**
 
 - [ ] CI no GitHub Actions com mypy e pytest
-- [ ] Dockerfile e docker-compose
 - [ ] CORS configurado
 - [ ] Refresh token e revogação de access token
 - [ ] Rate limiting no login

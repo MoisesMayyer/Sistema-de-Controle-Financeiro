@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
-    banco_dados: str = Field(default="sqlite:///./financeiro.db", validation_alias="BANCODADOS")
+    database_url: str = Field(validation_alias="DATABASE_URL")
 
 
 settings = Settings()  # type: ignore[call-arg]  # valores vindos do .env
