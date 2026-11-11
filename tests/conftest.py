@@ -112,3 +112,25 @@ def usuario(criar_usuario):
 @pytest.fixture
 def headers(usuario, autenticar):
     return autenticar(email=usuario["email"])
+
+
+@pytest.fixture
+def outro_usuario(criar_usuario):
+    return criar_usuario(nome="bia", email="bia@example.com", senha="senha12345")
+
+
+@pytest.fixture
+def outro_headers(outro_usuario, autenticar):
+    return autenticar(email=outro_usuario["email"])
+
+
+@pytest.fixture
+def admin(criar_usuario):
+    return criar_usuario(
+        nome="admin", email="admin@example.com", senha="senha12345", admin=True
+    )
+
+
+@pytest.fixture
+def admin_headers(admin, autenticar):
+    return autenticar(email=admin["email"])

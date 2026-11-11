@@ -4,16 +4,6 @@ from dados.models import Meta
 from rotas.metas.crud import calcular_porcentagem_meta
 
 
-@pytest.fixture
-def outro_usuario(criar_usuario):
-    return criar_usuario(nome="bia", email="bia@example.com", senha="senha12345")
-
-
-@pytest.fixture
-def outro_headers(outro_usuario, autenticar):
-    return autenticar(email=outro_usuario["email"])
-
-
 def criar_meta(client, headers, **dados):
     payload = {"nome": "Viagem", "valor_inicial": 250, "valor_final": 1000}
     payload.update(dados)

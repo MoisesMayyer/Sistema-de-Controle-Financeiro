@@ -182,7 +182,6 @@ cython_debug/
 /.idea
 
 src/dados/gastos.json
-src/dados/gastos.json
 *.json
 /src/financeiro.db
 /financeiro.db

@@ -3,23 +3,6 @@ import pytest
 from dados.models import Categoria, Meta, Transacao, Usuario
 
 
-@pytest.fixture
-def outro_usuario(criar_usuario):
-    return criar_usuario(nome="outro", email="outro@example.com", senha="senha12345")
-
-
-@pytest.fixture
-def admin(criar_usuario):
-    return criar_usuario(
-        nome="admin", email="admin@example.com", senha="senha12345", admin=True
-    )
-
-
-@pytest.fixture
-def admin_headers(admin, autenticar):
-    return autenticar(email=admin["email"])
-
-
 def _requisitar(client, metodo, caminho, headers=None, json=None):
     return client.request(metodo.upper(), caminho, headers=headers, json=json)
 
