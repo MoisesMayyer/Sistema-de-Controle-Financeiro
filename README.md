@@ -3,13 +3,14 @@
 API REST de controle financeiro pessoal **multi-usuário**, com autenticação JWT e isolamento de dados por usuário.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.143-009688?logo=fastapi&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688?logo=fastapi&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.1-D71F00)
 ![Pydantic](https://img.shields.io/badge/Pydantic-2.14-E92063)
+![PyJWT](https://img.shields.io/badge/PyJWT-2.15-000000?logo=jsonwebtokens&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
 ![Alembic](https://img.shields.io/badge/Alembic-1.20-6BA81E)
 ![mypy](https://img.shields.io/badge/mypy-passing-2A6DB0)
-![testes](https://img.shields.io/badge/testes-automatizados%20em%20constru%C3%A7%C3%A3o-yellow)
+![testes](https://img.shields.io/badge/testes-186%20passando-brightgreen)
 
 > **Projeto de estudo e portfólio.** Nasceu como um controle financeiro de terminal em JSON e foi reescrito para aprender **FastAPI**, **SQLAlchemy**, **Pydantic**, **PostgreSQL** e **Alembic**.
 
@@ -22,11 +23,13 @@ API REST de controle financeiro pessoal **multi-usuário**, com autenticação J
 - [Como usar](#como-usar)
 - [Endpoints](#endpoints)
 - [Regras de negócio](#regras-de-negócio)
+- [Códigos de status](#códigos-de-status)
 - [Modelo de dados](#modelo-de-dados)
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Decisões técnicas](#decisões-técnicas)
 - [Qualidade](#qualidade)
 - [O que falta](#o-que-falta)
+- [Status do projeto](#status-do-projeto)
 
 ## Sobre o projeto
 
@@ -47,7 +50,7 @@ O diferencial é o **multi-usuário**: cada conta vê apenas os próprios dados,
 | Camada | Tecnologia |
 |---|---|
 | Linguagem | Python 3.10+ (testado em 3.14) |
-| Framework | FastAPI 0.143 |
+| Framework | FastAPI 0.162 |
 | ORM | SQLAlchemy 2.1 |
 | Validação/serialização | Pydantic 2.14 + pydantic-settings |
 | Banco | PostgreSQL 18 |
@@ -55,7 +58,7 @@ O diferencial é o **multi-usuário**: cada conta vê apenas os próprios dados,
 | Servidor | Uvicorn |
 | Hash de senha | pwdlib (Argon2) |
 | Token | PyJWT (HS256) |
-| Qualidade | mypy |
+| Qualidade | mypy + pytest/TestClient (PostgreSQL) |
 
 ## Como rodar
 
@@ -110,6 +113,24 @@ Nenhuma rota promove usuários a admin. Defina o primeiro direto no banco, após
 # a partir da raiz do projeto (use as credenciais do DATABASE_URL)
 psql -h localhost -U postgres -d controle_financeiro -c "UPDATE usuarios SET admin = 1 WHERE id = 1;"
 ```
+
+### Testes
+
+A suíte usa **PostgreSQL real** e recria as tabelas a cada teste (`drop_all`/`create_all`), sem tocar no banco de desenvolvimento. Crie o banco de teste uma vez:
+
+```bash
+createdb -h localhost -U postgres test_controle_financeiro
+```
+
+Com o `.env` configurado e as dependências instaladas:
+
+```bash
+pytest tests/test_routers
+```
+
+O `tests/conftest.py` deriva `test_controle_financeiro` a partir de `DATABASE_URL` e aceita `TEST_DATABASE_URL` para sobrescrever. Por segurança, a suíte só roda se o nome do banco começar com `test_`.
+
+> A suíte oficial tem **186 testes** em `tests/test_routers/`: autenticação (15), usuários (49), categorias (42), transações (39) e metas (41). O arquivo local `tests/test_exemplos_fixtures.py` é um rascunho didático de fixtures não versionado; se existir, `pytest` o inclui (198 no total).
 
 ## Como usar
 
@@ -266,9 +287,9 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 | Recurso | Regra |
 |---|---|
 | Usuário | Nome de 3 a 100 caracteres; e-mail válido e único; senha com 6+ caracteres. Só admin altera `ativo`; `admin` não é editável pela API |
-| Transação | `valor > 0`; `tipo` `receita`/`despesa`; `data` obrigatória; `descricao` de 1 a 255 caracteres. Categoria deve existir e pertencer ao usuário |
+| Transação | `valor > 0`; `tipo` `receita`/`despesa`; `data` obrigatória; `descricao` de 1 a 255 caracteres. Categoria, quando informada, deve existir e pertencer ao usuário |
 | Categoria | Nome único por usuário; `valor_limite > valor_inicial` e `> 0`; não removível com transações; `saldo = inicial + receitas − despesas`; teto de 100% no `porcentagem_limite` |
-| Meta | `valor_inicial >= 0`; `valor_final >= valor_inicial` e `> 0`; `data_fim` posterior a `data_inicio`; aporte positivo e limitado ao `valor_final`; teto de 100% na `porcentagem` |
+| Meta | `valor_inicial >= 0`; `valor_final >= valor_inicial` e `> 0`; `data_fim` posterior a `data_inicio` quando ambas forem informadas; aporte positivo e limitado ao `valor_final`; teto de 100% na `porcentagem` |
 
 ## Códigos de status
 
@@ -283,6 +304,14 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 | `404` | Recurso inexistente ou de outro usuário em transações, categorias e metas |
 | `422` | Payload inválido pelo Pydantic, incluindo limites inválidos na criação |
 
+## Modelo de dados
+
+```
+usuarios (1) ──< categorias
+             ──< transacoes
+             ──< metas
+categorias (1) ──< transacoes
+```
 
 | Tabela | Campos |
 |---|---|
@@ -291,7 +320,10 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 | `transacoes` | `id`, `descricao`, `valor`, `tipo`, `data`, `categoria_id` (opcional), `usuario_id` |
 | `metas` | `id`, `nome`, `valor_inicial`, `valor_final`, `data_inicio`, `data_fim`, `usuario_id` |
 
-`categorias` tem `UNIQUE (usuario_id, nome)`; `usuario_id` é obrigatório e indexado nas tabelas de dados. Remover um usuário apaga seus dados em cascata (ORM); `categoria_id` é opcional.
+- `usuarios.email` é único e indexado; `categorias` tem `UNIQUE (usuario_id, nome)`.
+- `usuario_id` é `NOT NULL` e indexado em `categorias`, `transacoes` e `metas`; remover um usuário apaga seus dados em cascata pelo ORM.
+- `transacoes.categoria_id` é opcional e referencia `categorias.id`; transações sem categoria não entram nos agregados.
+- O schema é versionado pelo Alembic; a revisão inicial (`ca0004d3e874`) cria as quatro tabelas, os índices e as constraints. Aplique com `alembic upgrade head`.
 
 ## Estrutura do projeto
 
@@ -301,30 +333,41 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 ├── migrations/                  # Migrações do banco
 │   ├── env.py
 │   └── versions/                # Revisões
-└── src/
-    ├── main.py                  # App e routers
-    ├── dados/
-    │   ├── config.py            # Settings do .env
-    │   ├── database.py          # Engine, Base e SessionLocal
-    │   ├── dependencies.py      # get_db e verificar_token
-    │   ├── security.py          # Argon2 e JWT
-    │   ├── models/              # Tabelas SQLAlchemy
-    │   │   ├── usuario.py
-    │   │   ├── transacao.py
-    │   │   ├── categoria.py
-    │   │   └── meta.py
-    │   └── schemas/             # Schemas Pydantic
-    │       ├── usuario.py
-    │       ├── token.py
-    │       ├── transacao.py
-    │       ├── categoria.py
-    │       └── meta.py
-    └── rotas/
-        ├── auth/crud.py         # Login e /me
-        ├── usuarios/crud.py
-        ├── transacoes/crud.py
-        ├── categorias/crud.py   # Agregados
-        └── metas/crud.py        # Aporte
+├── src/
+│   ├── main.py                  # App e routers
+│   ├── dados/
+│   │   ├── config.py            # Settings do .env
+│   │   ├── database.py          # Engine, Base e SessionLocal
+│   │   ├── dependencies.py      # get_db e verificar_token
+│   │   ├── security.py          # Argon2 e JWT
+│   │   ├── models/              # Tabelas SQLAlchemy
+│   │   │   ├── usuario.py
+│   │   │   ├── transacao.py
+│   │   │   ├── categoria.py
+│   │   │   └── meta.py
+│   │   └── schemas/             # Schemas Pydantic
+│   │       ├── usuario.py
+│   │       ├── token.py
+│   │       ├── transacao.py
+│   │       ├── categoria.py
+│   │       └── meta.py
+│   └── rotas/
+│       ├── auth/crud.py         # Login e /me
+│       ├── usuarios/crud.py
+│       ├── transacoes/crud.py
+│       ├── categorias/crud.py   # Agregados
+│       └── metas/crud.py        # Aporte
+├── tests/
+│   ├── conftest.py              # Fixtures e banco de teste
+│   └── test_routers/
+│       ├── test_auth.py
+│       ├── test_usuarios.py
+│       ├── test_categorias.py
+│       ├── test_transacoes.py
+│       └── test_metas.py
+├── pyproject.toml               # Configuração do pytest
+├── requirements.txt
+└── .env.example
 ```
 
 ## Decisões técnicas
@@ -350,7 +393,15 @@ mypy --ignore-missing-imports --explicit-package-bases src
 # Success: no issues found in 29 source files
 ```
 
-> **Testes:** ainda não há suíte no repositório. As rotas foram validadas manualmente com `TestClient`; criar a suíte com `pytest` é o próximo item do roadmap.
+A suíte oficial tem **186 testes** com `pytest` + `TestClient` sobre PostgreSQL:
+
+- **autenticação (15):** login válido/inválido, conta desativada, token ausente/inválido/expirado/sem `sub` e usuário inexistente ou inativo;
+- **usuários (49):** criação e validação, e-mail duplicado, isolamento por dono, admin, atualização parcial e de senha, cancelamento, exclusão e cascade dos dados;
+- **categorias (42):** CRUD, nome único por usuário, validação dos limites, agregados de receitas/despesas, saldo e teto de 100%;
+- **transações (39):** CRUD, tipos válidos, validações de valor/data, categoria do próprio usuário e desvinculação;
+- **metas (41):** CRUD, validação de valores/datas, aporte limitado ao `valor_final` e progresso com teto de 100%.
+
+Os módulos de rotas (`auth`, `usuarios`, `categorias`, `transacoes` e `metas`) têm **100% de cobertura de linhas e branches**; no pacote `src`, a cobertura total é **99%** (ficam de fora `/`, `/health` e o ramo de `sub` não numérico em `dependencies.py`).
 
 ## O que falta
 
@@ -358,7 +409,7 @@ Itens conhecidos, em ordem de prioridade:
 
 **Essencial**
 
-- [ ] Suíte com `pytest` + `TestClient` (autenticação, isolamento, limites e metas)
+- [X] Suíte com `pytest` + `TestClient` (186 testes: autenticação, isolamento, limites e metas)
 - [ ] Paginação e filtros (`tipo`, `data_inicio`/`data_fim`, `categoria_id`, `skip`/`limit`)
 - [ ] Relatório mensal de receitas e despesas
 
@@ -374,3 +425,7 @@ Itens conhecidos, em ordem de prioridade:
 - [ ] Refresh token e revogação de access token
 - [ ] Rate limiting no login
 - [ ] Deploy com link público
+
+## Status do projeto
+
+Em desenvolvimento, com autenticação JWT, isolamento por usuário e CRUD completo de transações, categorias e metas sobre PostgreSQL. A suíte oficial tem 186 testes e os módulos de rotas estão cobertos em 100% de linhas e branches; paginação, relatórios, CI e melhorias de produção são os próximos passos.
