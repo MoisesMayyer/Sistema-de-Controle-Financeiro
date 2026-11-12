@@ -12,6 +12,7 @@ from dados.schemas.categoria import (
 )
 from dados.schemas.meta import MetaCreate, MetaUpdate, MetaResponse, MetaListResponse
 from dados.schemas.usuario import UsuarioListResponse
+from dados.schemas.relatorio import RelatorioValorResponse
 from dados.schemas.token import Token
 
 __all__ = [
@@ -28,5 +29,6 @@ __all__ = [
     "MetaResponse",
     "MetaListResponse",
     "UsuarioListResponse",
+    "RelatorioValorResponse",
     "Token",
 ]

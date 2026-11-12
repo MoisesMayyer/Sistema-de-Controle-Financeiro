@@ -10,7 +10,7 @@ API REST de controle financeiro pessoal **multi-usuário**, com autenticação J
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
 ![Alembic](https://img.shields.io/badge/Alembic-1.20-6BA81E)
 ![mypy](https://img.shields.io/badge/mypy-passing-2A6DB0)
-![testes](https://img.shields.io/badge/testes-215%20passando-brightgreen)
+![testes](https://img.shields.io/badge/testes-241%20passando-brightgreen)
 
 > **Projeto de estudo e portfólio.** Nasceu como um controle financeiro de terminal em JSON e foi reescrito para aprender **FastAPI**, **SQLAlchemy**, **Pydantic**, **PostgreSQL** e **Alembic**.
 
@@ -130,7 +130,7 @@ pytest tests/test_routers
 
 O `tests/conftest.py` deriva `test_controle_financeiro` a partir de `DATABASE_URL` e aceita `TEST_DATABASE_URL` para sobrescrever. Por segurança, a suíte só roda se o nome do banco começar com `test_`.
 
-> A suíte oficial tem **215 testes** em `tests/test_routers/`: autenticação (15), usuários (55), categorias (47), transações (52) e metas (46). O arquivo local `tests/test_exemplos_fixtures.py` é um rascunho didático de fixtures não versionado; se existir, `pytest` o inclui (227 no total).
+> A suíte oficial tem **241 testes** em `tests/test_routers/`: autenticação (15), usuários (55), categorias (47), transações (52), metas (46) e relatórios (26). O arquivo local `tests/test_exemplos_fixtures.py` é um rascunho didático de fixtures não versionado; se existir, `pytest` o inclui (253 no total).
 
 ## Como usar
 
@@ -275,6 +275,15 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 | DELETE | `/metas/{id}` | dono | Remove |
 | POST | `/metas/{id}/adicionar-valor` | dono | Adiciona ao progresso |
 
+### Relatórios
+
+| Método | Rota | Acesso | Descrição |
+|---|---|---|---|
+| GET | `/relatorios/receitas` | autenticado | Lista receitas, com paginação e busca |
+| GET | `/relatorios/despesas` | autenticado | Lista despesas, com paginação e busca |
+| GET | `/relatorios/valor_receita` | autenticado | Soma das receitas do mês (`ano`, `mes`) |
+| GET | `/relatorios/valor_despesas` | autenticado | Soma das despesas do mês (`ano`, `mes`) |
+
 ### Sistema
 
 | Método | Rota | Acesso | Descrição |
@@ -284,7 +293,7 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 
 ### Paginação e filtros
 
-Todas as listagens (`/usuarios/`, `/transacoes/`, `/categorias/` e `/metas/`) retornam um envelope:
+Todas as listagens (`/usuarios/`, `/transacoes/`, `/categorias/`, `/metas/`, `/relatorios/receitas` e `/relatorios/despesas`) retornam um envelope:
 
 ```json
 {"items": [], "total": 42, "skip": 0, "limit": 10}
@@ -305,6 +314,21 @@ Todas as listagens (`/usuarios/`, `/transacoes/`, `/categorias/` e `/metas/`) re
 curl "http://localhost:8000/transacoes/?tipo=despesa&data_inicio=2026-10-01&data_fim=2026-10-31&skip=0&limit=10" \
   -H "Authorization: Bearer $TOKEN"
 ```
+
+### Relatórios mensais
+
+`/relatorios/valor_receita` e `/relatorios/valor_despesas` exigem `ano` (`2000..2100`) e `mes` (`1..12`) e retornam apenas o total do período:
+
+```json
+{"valor_total": 1500.5}
+```
+
+```bash
+curl "http://localhost:8000/relatorios/valor_despesas?ano=2026&mes=10" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Mês sem lançamentos retorna `{"valor_total": 0.0}`.
 
 ## Regras de negócio
 
@@ -417,13 +441,14 @@ mypy --ignore-missing-imports --explicit-package-bases src
 # Success: no issues found in 29 source files
 ```
 
-A suíte oficial tem **215 testes** com `pytest` + `TestClient` sobre PostgreSQL:
+A suíte oficial tem **241 testes** com `pytest` + `TestClient` sobre PostgreSQL:
 
 - **autenticação (15):** login válido/inválido, conta desativada, token ausente/inválido/expirado/sem `sub` e usuário inexistente ou inativo;
 - **usuários (55):** criação e validação, e-mail duplicado, isolamento por dono, admin, listagem paginada e busca, atualização parcial e de senha, cancelamento, exclusão e cascade dos dados;
 - **categorias (47):** CRUD, nome único por usuário, validação dos limites, listagem paginada e busca, agregados de receitas/despesas, saldo e teto de 100%;
 - **transações (52):** CRUD, tipos válidos, validações de valor/data, listagem paginada com busca e filtros de tipo, categoria e período, categoria do próprio usuário e desvinculação;
-- **metas (46):** CRUD, validação de valores/datas, listagem paginada e busca, aporte limitado ao `valor_final` e progresso com teto de 100%.
+- **metas (46):** CRUD, validação de valores/datas, listagem paginada e busca, aporte limitado ao `valor_final` e progresso com teto de 100%;
+- **relatórios (26):** listagem de receitas/despesas por tipo com busca, soma mensal de receitas e despesas, mês vazio, isolamento por usuário, virada de dezembro e parâmetros inválidos.
 
 Os módulos de rotas (`auth`, `usuarios`, `categorias`, `transacoes` e `metas`) têm **100% de cobertura de linhas e branches**; no pacote `src`, a cobertura total é **99%** (ficam de fora `/`, `/health` e o ramo de `sub` não numérico em `dependencies.py`).
 
@@ -433,9 +458,9 @@ Itens conhecidos, em ordem de prioridade:
 
 **Essencial**
 
-- [X] Suíte com `pytest` + `TestClient` (215 testes: autenticação, isolamento, limites e metas)
+- [X] Suíte com `pytest` + `TestClient` (241 testes: autenticação, isolamento, limites e metas)
 - [X] Paginação e filtros (`tipo`, `data_inicio`/`data_fim`, `categoria_id`, `skip`/`limit`)
-- [ ] Relatório mensal de receitas e despesas
+- [X] Relatório mensal de receitas e despesas
 
 **Qualidade**
 - [X] Migrations com Alembic
@@ -452,4 +477,4 @@ Itens conhecidos, em ordem de prioridade:
 
 ## Status do projeto
 
-Em desenvolvimento, com autenticação JWT, isolamento por usuário, paginação e filtros, e CRUD completo de transações, categorias e metas sobre PostgreSQL. A suíte oficial tem 215 testes e os módulos de rotas estão cobertos em 100% de linhas e branches; relatórios, CI e melhorias de produção são os próximos passos.
+Em desenvolvimento, com autenticação JWT, isolamento por usuário, paginação e filtros, CRUD completo de transações, categorias e metas e relatórios mensais sobre PostgreSQL. A suíte oficial tem 241 testes e os módulos de rotas estão cobertos em 100% de linhas e branches; CI e melhorias de produção são os próximos passos.

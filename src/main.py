@@ -4,6 +4,7 @@ from rotas.categorias.crud import router_categoria
 from rotas.metas.crud import router_meta
 from rotas.usuarios.crud import router_usuario
 from rotas.auth.crud import router_auth
+from rotas.relatorios.crud import router_relatorio
 
 app = FastAPI(title="Controle Financeiro API")
 
@@ -12,6 +13,8 @@ app.include_router(router_categoria)
 app.include_router(router_meta)
 app.include_router(router_usuario)
 app.include_router(router_auth)
+app.include_router(router_relatorio)
+
 
 @app.get("/")
 async def read_root():
