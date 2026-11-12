@@ -470,7 +470,7 @@ Itens conhecidos, em ordem de prioridade:
 **Produção**
 
 - [ ] CI no GitHub Actions com mypy e pytest
-- [ ] CORS configurado
+- [X] CORS configurado
 - [ ] Refresh token e revogação de access token
 - [ ] Rate limiting no login
 - [ ] Deploy com link público
