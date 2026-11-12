@@ -1,9 +1,11 @@
+import hashlib
 import os
 from pathlib import Path
 
 import pytest
 from dotenv import dotenv_values
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from sqlalchemy.engine import make_url
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -39,10 +41,61 @@ from dados.models import Usuario  # noqa: E402, F401
 from main import app  # noqa: E402
 
 
+LOCK_KEY = int.from_bytes(
+    hashlib.sha256(TEST_DATABASE_URL.encode()).digest()[:8],
+    byteorder="big",
+    signed=True,
+)
+
+
+def _limpar_tabelas():
+    with engine.begin() as conexao:
+        if engine.dialect.name == "postgresql":
+            tabelas = ", ".join(
+                f'"{tabela.name}"' for tabela in Base.metadata.sorted_tables
+            )
+            conexao.execute(
+                text(f"TRUNCATE TABLE {tabelas} RESTART IDENTITY CASCADE")
+            )
+        else:
+            for tabela in reversed(Base.metadata.sorted_tables):
+                conexao.execute(tabela.delete())
+
+
+@pytest.fixture(scope="session", autouse=True)
+def preparar_banco():
+    conexao_lock = engine.connect()
+
+    try:
+        if engine.dialect.name == "postgresql":
+            conexao_lock.execute(
+                text("SELECT pg_advisory_lock(:chave)"),
+                {"chave": LOCK_KEY},
+            )
+            conexao_lock.commit()
+
+        Base.metadata.drop_all(bind=engine)
+        Base.metadata.create_all(bind=engine)
+
+        yield
+    finally:
+        try:
+            Base.metadata.drop_all(bind=engine)
+        finally:
+            if engine.dialect.name == "postgresql":
+                conexao_lock.execute(
+                    text("SELECT pg_advisory_unlock(:chave)"),
+                    {"chave": LOCK_KEY},
+                )
+                conexao_lock.commit()
+
+            conexao_lock.close()
+            engine.dispose()
+
+
 @pytest.fixture(autouse=True)
-def banco_limpa():
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+def banco_limpa(preparar_banco):
+    _limpar_tabelas()
     yield
 
 
