@@ -18,5 +18,15 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     database_url: str = Field(validation_alias="DATABASE_URL")
 
+    CORS_ORIGINS: str = "http://localhost:8800"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [
+            origem.strip()
+            for origem in self.CORS_ORIGINS.split(",")
+            if origem.strip()
+        ]
+
 
 settings = Settings()  # type: ignore[call-arg]  # valores vindos do .env
