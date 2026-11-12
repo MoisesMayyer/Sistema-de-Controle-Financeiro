@@ -42,3 +42,10 @@ class MetaResponse(MetaBase):
 
     class Config:
         from_attributes = True
+
+
+class MetaListResponse(BaseModel):
+    items: list[MetaResponse]
+    total: int
+    skip: int
+    limit: int

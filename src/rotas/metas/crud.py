@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy.orm import Session
 
 from dados.dependencies import get_db, verificar_token
 from dados.models import Meta, Usuario
-from dados.schemas import MetaCreate, MetaUpdate, MetaResponse
+from dados.schemas import MetaCreate, MetaUpdate, MetaResponse, MetaListResponse
 
 router_meta = APIRouter(prefix="/metas", tags=["Metas"])
 
@@ -28,10 +30,34 @@ def meta_to_response(meta: Meta) -> MetaResponse:
     )
 
 
-@router_meta.get("/", response_model=list[MetaResponse])
-def listar_metas(db: Session = Depends(get_db), usuario: Usuario = Depends(verificar_token)):
-    metas = db.query(Meta).filter(Meta.usuario_id == usuario.id).all()
-    return [meta_to_response(m) for m in metas]
+@router_meta.get("/", response_model=MetaListResponse)
+def listar_metas(
+        db: Session = Depends(get_db),
+        usuario: Usuario = Depends(verificar_token),
+        skip: int = Query(0, ge=0),
+        limit: int = Query(10, ge=1, le=100),
+        busca: Optional[str] = Query(None),
+):
+    query = db.query(Meta).filter(Meta.usuario_id == usuario.id)
+
+    if busca:
+        query = query.filter(Meta.nome.ilike(f"%{busca}%"))
+
+    total = query.count()
+
+    metas = (
+        query.order_by(Meta.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return MetaListResponse(
+        items=[meta_to_response(meta) for meta in metas],
+        total=total,
+        skip=skip,
+        limit=limit,
+    )
 
 
 @router_meta.get("/{id}", response_model=MetaResponse)

@@ -83,7 +83,48 @@ def test_listar_metas_retorna_apenas_do_usuario(
     resposta = client.get("/metas/", headers=headers)
 
     assert resposta.status_code == 200, resposta.text
-    assert [item["id"] for item in resposta.json()] == [minha.json()["id"]]
+    corpo = resposta.json()
+    assert [item["id"] for item in corpo["items"]] == [minha.json()["id"]]
+    assert corpo["total"] == 1
+
+
+def test_listar_metas_paginado(client, headers):
+    for nome in ("Viagem", "Curso", "Reserva"):
+        assert criar_meta(client, headers, nome=nome).status_code == 201
+
+    pagina_1 = client.get("/metas/?skip=0&limit=2", headers=headers).json()
+    pagina_2 = client.get("/metas/?skip=2&limit=2", headers=headers).json()
+
+    assert pagina_1["total"] == 3
+    assert pagina_1["skip"] == 0
+    assert pagina_1["limit"] == 2
+    assert len(pagina_1["items"]) == 2
+    assert len(pagina_2["items"]) == 1
+    assert pagina_2["total"] == 3
+
+    ids = [item["id"] for item in pagina_1["items"] + pagina_2["items"]]
+    assert len(ids) == len(set(ids)) == 3
+
+
+def test_listar_metas_filtra_por_busca(client, headers):
+    assert criar_meta(client, headers, nome="Viagem").status_code == 201
+    assert criar_meta(client, headers, nome="Curso").status_code == 201
+
+    resposta = client.get("/metas/?busca=cur", headers=headers)
+
+    assert resposta.status_code == 200, resposta.text
+    assert [item["nome"] for item in resposta.json()["items"]] == ["Curso"]
+    assert resposta.json()["total"] == 1
+
+
+@pytest.mark.parametrize(
+    "query",
+    ["limit=0", "limit=101", "skip=-1"],
+)
+def test_listar_metas_paginacao_invalida(client, headers, query):
+    resposta = client.get(f"/metas/?{query}", headers=headers)
+
+    assert resposta.status_code == 422, resposta.text
 
 
 def test_buscar_meta_propria(client, headers):
