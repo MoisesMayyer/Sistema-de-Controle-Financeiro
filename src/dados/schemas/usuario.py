@@ -35,3 +35,10 @@ class UsuarioResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UsuarioListResponse(BaseModel):
+    items: list[UsuarioResponse]
+    total: int
+    skip: int
+    limit: int

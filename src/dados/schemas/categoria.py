@@ -33,3 +33,10 @@ class CategoriaResponse(CategoriaBase):
 
     class Config:
         from_attributes = True
+
+
+class CategoriaListResponse(BaseModel):
+    items: list[CategoriaResponse]
+    total: int
+    skip: int
+    limit: int

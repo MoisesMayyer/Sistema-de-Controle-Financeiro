@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
+from datetime import date
 
 from dados.dependencies import get_db, verificar_token
-from dados.models import Categoria, Transacao, Usuario
+from dados.models import Categoria, Transacao, Usuario, TipoTransacao
 from dados.schemas import (
     TransacaoCreate,
     TransacaoUpdate,
@@ -21,16 +22,36 @@ def listar_transacoes(
         skip: int = Query(0, ge=0),
         limit: int = Query(10, ge=1, le=100),
         busca: Optional[str] = Query(None),
+        tipo: Optional[TipoTransacao] = Query(None),
+        categoria_id: Optional[int] = Query(None, ge=1),
+        data_inicio: Optional[date] = Query(None),
+        data_fim: Optional[date] = Query(None),
 ):
+
+    if data_inicio and data_fim and data_inicio > data_fim:
+        raise HTTPException(
+            status_code=400,
+            detail="data_inicio deve ser anterior ou igual a data_fim",
+        )
+
     query = db.query(Transacao).filter(Transacao.usuario_id == usuario.id)
 
     if busca:
         query = query.filter(Transacao.descricao.ilike(f"%{busca}%"))
 
+    if tipo:
+        query = query.filter(Transacao.tipo == tipo)
+    if categoria_id:
+        query = query.filter(Transacao.categoria_id == categoria_id)
+    if data_inicio:
+        query = query.filter(Transacao.data >= data_inicio)
+    if data_fim:
+        query = query.filter(Transacao.data <= data_fim)
+
     total = query.count()
 
     transacoes = (
-        query.order_by(Transacao.id.desc())
+        query.order_by(Transacao.data.desc(), Transacao.id.desc())
         .offset(skip)
         .limit(limit)
         .all()

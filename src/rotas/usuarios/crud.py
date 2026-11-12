@@ -1,23 +1,56 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from dados.dependencies import get_db, verificar_token
 from dados.models import Usuario
-from dados.schemas.usuario import UsuarioCreate, UsuarioResponse, UsuarioUpdate
+from dados.schemas.usuario import (
+    UsuarioCreate,
+    UsuarioResponse,
+    UsuarioUpdate,
+    UsuarioListResponse,
+)
 from dados.security import gerar_hash_senha
 
 router_usuario = APIRouter(prefix="/usuarios", tags=["Usuários"])
 
 
-@router_usuario.get("/", response_model=list[UsuarioResponse])
+@router_usuario.get("/", response_model=UsuarioListResponse)
 def listar_usuarios(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(verificar_token),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    busca: Optional[str] = Query(None),
 ):
+    # Admin lista todos; usuário comum lista apenas a si mesmo.
     if usuario.admin:
-        return db.query(Usuario).all()
+        query = db.query(Usuario)
+    else:
+        query = db.query(Usuario).filter(Usuario.id == usuario.id)
 
-    return [usuario]
+    # Busca por nome ou email (aqui são dois campos, por isso o "|" = OU).
+    if busca:
+        query = query.filter(
+            Usuario.nome.ilike(f"%{busca}%") | Usuario.email.ilike(f"%{busca}%")
+        )
+
+    total = query.count()
+
+    usuarios = (
+        query.order_by(Usuario.id.asc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return UsuarioListResponse(
+        items=[UsuarioResponse.model_validate(u) for u in usuarios],
+        total=total,
+        skip=skip,
+        limit=limit,
+    )
 
 
 @router_usuario.get("/{id}", response_model=UsuarioResponse)

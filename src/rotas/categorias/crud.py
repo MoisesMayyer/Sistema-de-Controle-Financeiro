@@ -1,9 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from dados.dependencies import get_db, verificar_token
 from dados.models import Categoria, TipoTransacao, Usuario
-from dados.schemas import CategoriaCreate, CategoriaUpdate, CategoriaResponse
+from dados.schemas import (
+    CategoriaCreate,
+    CategoriaUpdate,
+    CategoriaResponse,
+    CategoriaListResponse,
+)
 
 router_categoria = APIRouter(prefix="/categorias", tags=["Categorias"])
 
@@ -31,10 +38,34 @@ def categoria_to_response(categoria: Categoria) -> CategoriaResponse:
     )
 
 
-@router_categoria.get("/", response_model=list[CategoriaResponse])
-def listar_categorias(db: Session = Depends(get_db), usuario: Usuario = Depends(verificar_token)):
-    categorias = db.query(Categoria).filter(Categoria.usuario_id == usuario.id).all()
-    return [categoria_to_response(c) for c in categorias]
+@router_categoria.get("/", response_model=CategoriaListResponse)
+def listar_categorias(
+        db: Session = Depends(get_db),
+        usuario: Usuario = Depends(verificar_token),
+        skip: int = Query(0, ge=0),
+        limit: int = Query(10, ge=1, le=100),
+        busca: Optional[str] = Query(None),
+):
+    query = db.query(Categoria).filter(Categoria.usuario_id == usuario.id)
+
+    if busca:
+        query = query.filter(Categoria.nome.ilike(f"%{busca}%"))
+
+    total = query.count()
+
+    categorias = (
+        query.order_by(Categoria.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return CategoriaListResponse(
+        items=[categoria_to_response(c) for c in categorias],
+        total=total,
+        skip=skip,
+        limit=limit,
+    )
 
 
 @router_categoria.get("/{id}", response_model=CategoriaResponse)

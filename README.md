@@ -10,7 +10,7 @@ API REST de controle financeiro pessoal **multi-usuário**, com autenticação J
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
 ![Alembic](https://img.shields.io/badge/Alembic-1.20-6BA81E)
 ![mypy](https://img.shields.io/badge/mypy-passing-2A6DB0)
-![testes](https://img.shields.io/badge/testes-186%20passando-brightgreen)
+![testes](https://img.shields.io/badge/testes-215%20passando-brightgreen)
 
 > **Projeto de estudo e portfólio.** Nasceu como um controle financeiro de terminal em JSON e foi reescrito para aprender **FastAPI**, **SQLAlchemy**, **Pydantic**, **PostgreSQL** e **Alembic**.
 
@@ -130,7 +130,7 @@ pytest tests/test_routers
 
 O `tests/conftest.py` deriva `test_controle_financeiro` a partir de `DATABASE_URL` e aceita `TEST_DATABASE_URL` para sobrescrever. Por segurança, a suíte só roda se o nome do banco começar com `test_`.
 
-> A suíte oficial tem **186 testes** em `tests/test_routers/`: autenticação (15), usuários (49), categorias (42), transações (39) e metas (41). O arquivo local `tests/test_exemplos_fixtures.py` é um rascunho didático de fixtures não versionado; se existir, `pytest` o inclui (198 no total).
+> A suíte oficial tem **215 testes** em `tests/test_routers/`: autenticação (15), usuários (55), categorias (47), transações (52) e metas (46). O arquivo local `tests/test_exemplos_fixtures.py` é um rascunho didático de fixtures não versionado; se existir, `pytest` o inclui (227 no total).
 
 ## Como usar
 
@@ -237,7 +237,7 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 
 | Método | Rota | Acesso | Descrição |
 |---|---|---|---|
-| GET | `/usuarios/` | autenticado | Admin vê todos; comum, só a si |
+| GET | `/usuarios/` | autenticado | Lista paginada: admin vê todos; comum, só a si |
 | GET | `/usuarios/{id}` | dono ou admin | Busca usuário |
 | POST | `/usuarios/` | público | Cria conta (`201`) |
 | PUT | `/usuarios/{id}` | dono ou admin | Edita nome, e-mail e senha; `ativo` só admin |
@@ -248,7 +248,7 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 
 | Método | Rota | Acesso | Descrição |
 |---|---|---|---|
-| GET | `/transacoes/` | autenticado | Lista do usuário |
+| GET | `/transacoes/` | autenticado | Lista paginada com filtros |
 | GET | `/transacoes/{id}` | dono | Busca |
 | POST | `/transacoes/` | autenticado | Cria (`201`) |
 | PUT | `/transacoes/{id}` | dono | Atualiza; `categoria_id: null` desvincula |
@@ -258,7 +258,7 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 
 | Método | Rota | Acesso | Descrição |
 |---|---|---|---|
-| GET | `/categorias/` | autenticado | Lista com agregados |
+| GET | `/categorias/` | autenticado | Lista paginada com agregados |
 | GET | `/categorias/{id}` | dono | Busca com agregados |
 | POST | `/categorias/` | autenticado | Cria (`201`) |
 | PUT | `/categorias/{id}` | dono | Atualiza |
@@ -268,7 +268,7 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 
 | Método | Rota | Acesso | Descrição |
 |---|---|---|---|
-| GET | `/metas/` | autenticado | Lista com progresso |
+| GET | `/metas/` | autenticado | Lista paginada com progresso |
 | GET | `/metas/{id}` | dono | Busca |
 | POST | `/metas/` | autenticado | Cria (`201`) |
 | PUT | `/metas/{id}` | dono | Atualiza |
@@ -281,6 +281,30 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 |---|---|---|---|
 | GET | `/` | público | Nome e versão da API |
 | GET | `/health` | público | Health check |
+
+### Paginação e filtros
+
+Todas as listagens (`/usuarios/`, `/transacoes/`, `/categorias/` e `/metas/`) retornam um envelope:
+
+```json
+{"items": [], "total": 42, "skip": 0, "limit": 10}
+```
+
+| Parâmetro | Onde | Descrição |
+|---|---|---|
+| `skip` | todas | Quantos registros pular (padrão `0`) |
+| `limit` | todas | Tamanho da página (padrão `10`, máximo `100`) |
+| `busca` | todas | Trecho de nome, descrição ou e-mail, sem diferenciar maiúsculas |
+| `tipo` | transações | `receita` ou `despesa` |
+| `categoria_id` | transações | Filtra por categoria |
+| `data_inicio` / `data_fim` | transações | Período inclusivo (`AAAA-MM-DD`) |
+
+`skip` negativo ou `limit` fora de `1..100` retornam `422`; `data_inicio` maior que `data_fim` retorna `400`.
+
+```bash
+curl "http://localhost:8000/transacoes/?tipo=despesa&data_inicio=2026-10-01&data_fim=2026-10-31&skip=0&limit=10" \
+  -H "Authorization: Bearer $TOKEN"
+```
 
 ## Regras de negócio
 
@@ -298,7 +322,7 @@ Transações, categorias, metas e as rotas protegidas de usuários exigem `Autho
 | `200` | Leitura, edição e remoção de transação/categoria/meta, cancelamento e aporte |
 | `201` | Criação de usuário, transação, categoria ou meta |
 | `204` | Remoção de usuário (sem corpo) |
-| `400` | E-mail/categoria duplicados, categoria inexistente ou de outro dono, categoria com transações, limites/datas inválidos na edição, aporte acima do `valor_final` |
+| `400` | E-mail/categoria duplicados, categoria inexistente ou de outro dono, categoria com transações, limites/datas inválidos na edição, período invertido nos filtros, aporte acima do `valor_final` |
 | `401` | Sem token, token inválido/expirado, usuário inativo ou credenciais incorretas |
 | `403` | `/usuarios` de outro dono ou alteração de `ativo` sem ser admin |
 | `404` | Recurso inexistente ou de outro usuário em transações, categorias e metas |
@@ -393,13 +417,13 @@ mypy --ignore-missing-imports --explicit-package-bases src
 # Success: no issues found in 29 source files
 ```
 
-A suíte oficial tem **186 testes** com `pytest` + `TestClient` sobre PostgreSQL:
+A suíte oficial tem **215 testes** com `pytest` + `TestClient` sobre PostgreSQL:
 
 - **autenticação (15):** login válido/inválido, conta desativada, token ausente/inválido/expirado/sem `sub` e usuário inexistente ou inativo;
-- **usuários (49):** criação e validação, e-mail duplicado, isolamento por dono, admin, atualização parcial e de senha, cancelamento, exclusão e cascade dos dados;
-- **categorias (42):** CRUD, nome único por usuário, validação dos limites, agregados de receitas/despesas, saldo e teto de 100%;
-- **transações (39):** CRUD, tipos válidos, validações de valor/data, categoria do próprio usuário e desvinculação;
-- **metas (41):** CRUD, validação de valores/datas, aporte limitado ao `valor_final` e progresso com teto de 100%.
+- **usuários (55):** criação e validação, e-mail duplicado, isolamento por dono, admin, listagem paginada e busca, atualização parcial e de senha, cancelamento, exclusão e cascade dos dados;
+- **categorias (47):** CRUD, nome único por usuário, validação dos limites, listagem paginada e busca, agregados de receitas/despesas, saldo e teto de 100%;
+- **transações (52):** CRUD, tipos válidos, validações de valor/data, listagem paginada com busca e filtros de tipo, categoria e período, categoria do próprio usuário e desvinculação;
+- **metas (46):** CRUD, validação de valores/datas, listagem paginada e busca, aporte limitado ao `valor_final` e progresso com teto de 100%.
 
 Os módulos de rotas (`auth`, `usuarios`, `categorias`, `transacoes` e `metas`) têm **100% de cobertura de linhas e branches**; no pacote `src`, a cobertura total é **99%** (ficam de fora `/`, `/health` e o ramo de `sub` não numérico em `dependencies.py`).
 
@@ -409,8 +433,8 @@ Itens conhecidos, em ordem de prioridade:
 
 **Essencial**
 
-- [X] Suíte com `pytest` + `TestClient` (186 testes: autenticação, isolamento, limites e metas)
-- [ ] Paginação e filtros (`tipo`, `data_inicio`/`data_fim`, `categoria_id`, `skip`/`limit`)
+- [X] Suíte com `pytest` + `TestClient` (215 testes: autenticação, isolamento, limites e metas)
+- [X] Paginação e filtros (`tipo`, `data_inicio`/`data_fim`, `categoria_id`, `skip`/`limit`)
 - [ ] Relatório mensal de receitas e despesas
 
 **Qualidade**
@@ -428,4 +452,4 @@ Itens conhecidos, em ordem de prioridade:
 
 ## Status do projeto
 
-Em desenvolvimento, com autenticação JWT, isolamento por usuário e CRUD completo de transações, categorias e metas sobre PostgreSQL. A suíte oficial tem 186 testes e os módulos de rotas estão cobertos em 100% de linhas e branches; paginação, relatórios, CI e melhorias de produção são os próximos passos.
+Em desenvolvimento, com autenticação JWT, isolamento por usuário, paginação e filtros, e CRUD completo de transações, categorias e metas sobre PostgreSQL. A suíte oficial tem 215 testes e os módulos de rotas estão cobertos em 100% de linhas e branches; relatórios, CI e melhorias de produção são os próximos passos.

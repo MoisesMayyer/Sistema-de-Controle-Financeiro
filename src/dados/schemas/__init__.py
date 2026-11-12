@@ -4,8 +4,14 @@ from dados.schemas.transacao import (
     TransacaoResponse,
     TransacaoListResponse,
 )
-from dados.schemas.categoria import CategoriaCreate, CategoriaUpdate, CategoriaResponse
+from dados.schemas.categoria import (
+    CategoriaCreate,
+    CategoriaUpdate,
+    CategoriaResponse,
+    CategoriaListResponse,
+)
 from dados.schemas.meta import MetaCreate, MetaUpdate, MetaResponse, MetaListResponse
+from dados.schemas.usuario import UsuarioListResponse
 from dados.schemas.token import Token
 
 __all__ = [
@@ -16,9 +22,11 @@ __all__ = [
     "CategoriaCreate",
     "CategoriaUpdate",
     "CategoriaResponse",
+    "CategoriaListResponse",
     "MetaCreate",
     "MetaUpdate",
     "MetaResponse",
     "MetaListResponse",
+    "UsuarioListResponse",
     "Token",
 ]

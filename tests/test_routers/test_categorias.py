@@ -113,9 +113,11 @@ def test_listar_categorias_usuario(client, headers):
     resposta = client.get("/categorias/", headers=headers)
 
     assert resposta.status_code == 200, resposta.text
-    assert len(resposta.json()) == 1
-    assert resposta.json()[0]["nome"] == "mercado"
-    assert resposta.json()[0]["valor_limite"] == 100
+    corpo = resposta.json()
+    assert corpo["total"] == 1
+    assert len(corpo["items"]) == 1
+    assert corpo["items"][0]["nome"] == "mercado"
+    assert corpo["items"][0]["valor_limite"] == 100
 
 
 def test_listar_categorias_retorna_apenas_do_usuario(
@@ -130,7 +132,49 @@ def test_listar_categorias_retorna_apenas_do_usuario(
     resposta = client.get("/categorias/", headers=headers)
 
     assert resposta.status_code == 200, resposta.text
-    assert [item["id"] for item in resposta.json()] == [minha.json()["id"]]
+    corpo = resposta.json()
+    assert [item["id"] for item in corpo["items"]] == [minha.json()["id"]]
+    assert corpo["total"] == 1
+
+
+def test_listar_categorias_paginado(client, headers):
+    for nome in ("mercado", "lazer", "transporte"):
+        assert criar_categoria(client, headers, nome=nome).status_code == 201
+
+    pagina_1 = client.get("/categorias/?skip=0&limit=2", headers=headers).json()
+    pagina_2 = client.get("/categorias/?skip=2&limit=2", headers=headers).json()
+
+    assert pagina_1["total"] == 3
+    assert pagina_1["skip"] == 0
+    assert pagina_1["limit"] == 2
+    assert len(pagina_1["items"]) == 2
+    assert len(pagina_2["items"]) == 1
+    assert pagina_2["total"] == 3
+
+    ids = [item["id"] for item in pagina_1["items"] + pagina_2["items"]]
+    assert len(ids) == len(set(ids)) == 3
+
+
+def test_listar_categorias_filtra_por_busca(client, headers):
+    assert criar_categoria(client, headers, nome="mercado").status_code == 201
+    assert criar_categoria(client, headers, nome="lazer").status_code == 201
+
+    resposta = client.get("/categorias/?busca=laz", headers=headers)
+
+    assert resposta.status_code == 200, resposta.text
+    corpo = resposta.json()
+    assert [item["nome"] for item in corpo["items"]] == ["lazer"]
+    assert corpo["total"] == 1
+
+
+@pytest.mark.parametrize(
+    "query",
+    ["limit=0", "limit=101", "skip=-1"],
+)
+def test_listar_categorias_paginacao_invalida(client, headers, query):
+    resposta = client.get(f"/categorias/?{query}", headers=headers)
+
+    assert resposta.status_code == 422, resposta.text
 
 
 def test_buscar_categoria_propria(client, headers):

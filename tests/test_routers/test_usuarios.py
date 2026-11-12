@@ -47,7 +47,9 @@ def test_listar_usuarios_comum_retorna_apenas_a_si(client, usuario, outro_usuari
     resposta = client.get("/usuarios/", headers=headers)
 
     assert resposta.status_code == 200, resposta.text
-    assert [item["id"] for item in resposta.json()] == [usuario["id"]]
+    corpo = resposta.json()
+    assert [item["id"] for item in corpo["items"]] == [usuario["id"]]
+    assert corpo["total"] == 1
 
 
 def test_listar_usuarios_admin_retorna_todos(
@@ -56,11 +58,63 @@ def test_listar_usuarios_admin_retorna_todos(
     resposta = client.get("/usuarios/", headers=admin_headers)
 
     assert resposta.status_code == 200, resposta.text
-    assert {item["email"] for item in resposta.json()} == {
+    corpo = resposta.json()
+    assert {item["email"] for item in corpo["items"]} == {
         usuario["email"],
         outro_usuario["email"],
         admin["email"],
     }
+    assert corpo["total"] == 3
+
+
+def test_listar_usuarios_admin_paginado(
+    client, usuario, outro_usuario, admin, admin_headers
+):
+    pagina_1 = client.get("/usuarios/?skip=0&limit=2", headers=admin_headers).json()
+    pagina_2 = client.get("/usuarios/?skip=2&limit=2", headers=admin_headers).json()
+
+    assert pagina_1["total"] == 3
+    assert pagina_1["skip"] == 0
+    assert pagina_1["limit"] == 2
+    assert len(pagina_1["items"]) == 2
+    assert len(pagina_2["items"]) == 1
+    assert pagina_2["total"] == 3
+
+    ids = [item["id"] for item in pagina_1["items"] + pagina_2["items"]]
+    assert len(ids) == len(set(ids)) == 3
+
+
+def test_listar_usuarios_admin_filtra_por_busca(
+    client, usuario, outro_usuario, admin_headers
+):
+    por_nome = client.get("/usuarios/?busca=bia", headers=admin_headers).json()
+    assert por_nome["total"] == 1
+    assert [item["email"] for item in por_nome["items"]] == [outro_usuario["email"]]
+
+    por_email = client.get("/usuarios/?busca=user1@", headers=admin_headers).json()
+    assert por_email["total"] == 1
+    assert [item["email"] for item in por_email["items"]] == [usuario["email"]]
+
+
+def test_listar_usuarios_comum_busca_nao_ve_outros(
+    client, usuario, outro_usuario, headers
+):
+    resposta = client.get("/usuarios/?busca=bia", headers=headers)
+
+    assert resposta.status_code == 200, resposta.text
+    corpo = resposta.json()
+    assert corpo["items"] == []
+    assert corpo["total"] == 0
+
+
+@pytest.mark.parametrize(
+    "query",
+    ["limit=0", "limit=101", "skip=-1"],
+)
+def test_listar_usuarios_paginacao_invalida(client, headers, query):
+    resposta = client.get(f"/usuarios/?{query}", headers=headers)
+
+    assert resposta.status_code == 422, resposta.text
 
 
 def test_buscar_usuario_proprio(client, usuario, headers):
