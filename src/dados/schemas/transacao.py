@@ -30,3 +30,10 @@ class TransacaoResponse(TransacaoBase):
 
     class Config:
         from_attributes = True
+
+
+class TransacaoListResponse(BaseModel):
+    items: list[TransacaoResponse]
+    total: int
+    skip: int
+    limit: int

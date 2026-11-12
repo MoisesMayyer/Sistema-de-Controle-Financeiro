@@ -1,19 +1,47 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from dados.dependencies import get_db, verificar_token
 from dados.models import Categoria, Transacao, Usuario
-from dados.schemas import TransacaoCreate, TransacaoUpdate, TransacaoResponse
+from dados.schemas import (
+    TransacaoCreate,
+    TransacaoUpdate,
+    TransacaoResponse,
+    TransacaoListResponse,
+)
 
 router_transacao = APIRouter(prefix="/transacoes", tags=["Transações"])
 
 
-@router_transacao.get("/", response_model=list[TransacaoResponse])
-def listar_transacoes(db: Session = Depends(get_db), usuario: Usuario = Depends(verificar_token)):
+@router_transacao.get("/", response_model=TransacaoListResponse)
+def listar_transacoes(
+        db: Session = Depends(get_db),
+        usuario: Usuario = Depends(verificar_token),
+        skip: int = Query(0, ge=0),
+        limit: int = Query(10, ge=1, le=100),
+        busca: Optional[str] = Query(None),
+):
+    query = db.query(Transacao).filter(Transacao.usuario_id == usuario.id)
 
-    transacoes = db.query(Transacao).filter(Transacao.usuario_id == usuario.id).all()
+    if busca:
+        query = query.filter(Transacao.descricao.ilike(f"%{busca}%"))
 
-    return transacoes
+    total = query.count()
+
+    transacoes = (
+        query.order_by(Transacao.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return TransacaoListResponse(
+        items=[TransacaoResponse.model_validate(t) for t in transacoes],
+        total=total,
+        skip=skip,
+        limit=limit,
+    )
 
 
 @router_transacao.get("/{id}", response_model=TransacaoResponse)
