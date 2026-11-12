@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional
 
 
@@ -40,9 +40,7 @@ class MetaResponse(MetaBase):
     usuario_id: int
     porcentagem: float = Field(default=0.0, ge=0, le=100)
 
-    class Config:
-        from_attributes = True
-
+    model_config = ConfigDict(from_attributes=True)
 
 class MetaListResponse(BaseModel):
     items: list[MetaResponse]
