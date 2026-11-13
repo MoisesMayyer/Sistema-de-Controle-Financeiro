@@ -3,7 +3,10 @@ from sqlalchemy.orm import relationship
 from dados.database import Base
 
 
-class Usuario(Base):
+from dados.models.mixins import TimestampMixin
+
+
+class Usuario(Base, TimestampMixin):
     __tablename__ = "usuarios"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

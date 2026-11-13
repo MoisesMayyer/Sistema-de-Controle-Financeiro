@@ -2,8 +2,9 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey, UniqueConstra
 from sqlalchemy.orm import relationship
 from dados.database import Base
 
+from dados.models.mixins import TimestampMixin
 
-class Categoria(Base):
+class Categoria(Base, TimestampMixin):
     __tablename__ = "categorias"
     __table_args__ = (UniqueConstraint("usuario_id", "nome", name="uq_categorias_usuario_nome"),)
 

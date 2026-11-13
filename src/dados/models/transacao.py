@@ -5,12 +5,14 @@ from sqlalchemy.orm import relationship
 from dados.database import Base
 
 
+from dados.models.mixins import TimestampMixin
+
 class TipoTransacao(str, enum.Enum):
     RECEITA = "receita"
     DESPESA = "despesa"
 
 
-class Transacao(Base):
+class Transacao(Base, TimestampMixin):
     __tablename__ = "transacoes"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

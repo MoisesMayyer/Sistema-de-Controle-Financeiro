@@ -4,7 +4,9 @@ from sqlalchemy.orm import relationship
 from dados.database import Base
 
 
-class Meta(Base):
+from dados.models.mixins import TimestampMixin
+
+class Meta(Base, TimestampMixin):
     __tablename__ = "metas"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

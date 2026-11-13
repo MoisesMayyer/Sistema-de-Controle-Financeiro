@@ -464,7 +464,7 @@ Itens conhecidos, em ordem de prioridade:
 
 **Qualidade**
 - [X] Migrations com Alembic
-- [ ] `criado_em` / `atualizado_em` (auditoria)
+- [X] `criado_em` / `atualizado_em` (auditoria)
 - [X] `model_config = ConfigDict(from_attributes=True)` no lugar do `class Config` (depreciado no Pydantic v2)
 
 **Produção**
