@@ -1,4 +1,4 @@
-// Execute com Node 22+: node --test frontend/tests/api.test.mjs
+// Execute com Node 22+: node --test docs/tests/api.test.mjs
 // Testes de contrato do cliente; não substituem os testes contra a API real.
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';

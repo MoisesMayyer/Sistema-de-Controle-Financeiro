@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Optional, dependency-free local frontend server. Run: node frontend/serve.mjs
+// Optional, dependency-free local docs server. Run: node docs/serve.mjs
 import http from 'node:http';
 import https from 'node:https';
 import { constants } from 'node:fs';
@@ -132,7 +132,7 @@ async function serveAsset(req, res, pathname, root) {
       res.destroy();
     } else {
       json(res, ['ENOENT', 'ENOTDIR', 'EACCES', 'ELOOP'].includes(error.code) ? 404 : 500,
-        error.code === 'ENOENT' ? 'Not found. Create the frontend assets first.' : 'Static file unavailable.');
+        error.code === 'ENOENT' ? 'Not found. Create the docs assets first.' : 'Static file unavailable.');
     }
   }
 }
@@ -185,7 +185,7 @@ function proxy(req, res, rawPath, query, api) {
       return;
     }
     const responseHeaders = cleanHeaders(incoming.headers);
-    // FastAPI's slash redirects must stay on the frontend origin.
+    // FastAPI's slash redirects must stay on the docs origin.
     if (responseHeaders.location) {
       try {
         const location = new URL(responseHeaders.location, api.origin + basePath + rawPath.slice(4));
@@ -260,8 +260,8 @@ async function main() {
     const address = isIP(host) === 6 ? `[${host}]` : host;
     console.log(`Frontend: http://${address}:${port}`);
     console.log(`API proxy: /api/{${[...API_PREFIXES].join(',')}} → ${api.href}`);
-    console.log('Usage: node frontend/serve.mjs');
-    console.log('Overrides: HOST=127.0.0.1 PORT=5500 API_URL=http://127.0.0.1:8000 node frontend/serve.mjs');
+    console.log('Usage: node docs/serve.mjs');
+    console.log('Overrides: HOST=127.0.0.1 PORT=5500 API_URL=http://127.0.0.1:8000 node docs/serve.mjs');
   });
 }
 
