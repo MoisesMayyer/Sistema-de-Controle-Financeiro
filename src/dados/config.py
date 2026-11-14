@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     database_url: str = Field(validation_alias="DATABASE_URL")
 
-    CORS_ORIGINS: str = "http://localhost:8800"
+    CORS_ORIGINS: str = "http://localhost:8800,https://moisesmayyer.github.io"
 
     @property
     def cors_origins(self) -> list[str]:
