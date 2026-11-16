@@ -473,7 +473,7 @@ Itens conhecidos, em ordem de prioridade:
 - [X] CORS configurado
 - [ ] Refresh token e revogação de access token
 - [ ] Rate limiting no login
-- [ ] Deploy com link público
+- [X] Deploy com link público
 
 ## Status do projeto
 
