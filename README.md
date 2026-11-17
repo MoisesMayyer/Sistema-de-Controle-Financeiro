@@ -1,7 +1,5 @@
 # Controle Financeiro API
 
-API REST de controle financeiro pessoal **multi-usuário**, com autenticação JWT e isolamento de dados por usuário.
-
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688?logo=fastapi&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.1-D71F00)
@@ -10,26 +8,20 @@ API REST de controle financeiro pessoal **multi-usuário**, com autenticação J
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
 ![Alembic](https://img.shields.io/badge/Alembic-1.20-6BA81E)
 ![mypy](https://img.shields.io/badge/mypy-passing-2A6DB0)
-![testes](https://img.shields.io/badge/testes-241%20passando-brightgreen)
+![pytest](https://img.shields.io/badge/pytest-241%20testes-0A9EDC?logo=pytest&logoColor=white)
+![Neon](https://img.shields.io/badge/Neon-0065FF?logo=neon&logoColor=white)
+![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=white)
 
-> **Projeto de estudo e portfólio.** Nasceu como um controle financeiro de terminal em JSON e foi reescrito para aprender **FastAPI**, **SQLAlchemy**, **Pydantic**, **PostgreSQL** e **Alembic**.
+API REST **multi-usuário** de controle financeiro pessoal com autenticação JWT, isolamento de dados por usuário e deploy no Render + Neon.
+
+[API](https://controle-financeiro-api.onrender.com) · [Swagger](https://controle-financeiro-api.onrender.com/docs)
+
+> [!NOTE]
+> Projeto de estudo e portfólio. Começou como um controle de terminal em JSON e foi reescrito para aprender **FastAPI**, **SQLAlchemy**, **Pydantic**, **PostgreSQL** e **Alembic**.
 
 ## Sumário
 
-- [Sobre o projeto](#sobre-o-projeto)
-- [Funcionalidades](#funcionalidades)
-- [Stack](#stack)
-- [Como rodar](#como-rodar)
-- [Como usar](#como-usar)
-- [Endpoints](#endpoints)
-- [Regras de negócio](#regras-de-negócio)
-- [Códigos de status](#códigos-de-status)
-- [Modelo de dados](#modelo-de-dados)
-- [Estrutura do projeto](#estrutura-do-projeto)
-- [Decisões técnicas](#decisões-técnicas)
-- [Qualidade](#qualidade)
-- [O que falta](#o-que-falta)
-- [Status do projeto](#status-do-projeto)
+[Sobre](#sobre-o-projeto) · [Funcionalidades](#funcionalidades) · [Stack](#stack) · [Como rodar](#como-rodar) · [Deploy](#deploy) · [Como usar](#como-usar) · [Endpoints](#endpoints) · [Regras](#regras-de-negócio) · [Códigos](#códigos-de-status) · [Modelo de dados](#modelo-de-dados) · [Frontend](#frontend) · [Decisões](#decisões-técnicas) · [Qualidade](#qualidade) · [O que falta](#o-que-falta)
 
 ## Sobre o projeto
 
@@ -37,178 +29,205 @@ O sistema registra transações (receitas e despesas), organiza-as em categorias
 
 O diferencial é o **multi-usuário**: cada conta vê apenas os próprios dados, filtrados pelo `usuario_id` do token — nunca pelo corpo da requisição. Um **admin** lista usuários e gerencia qualquer conta.
 
+```mermaid
+flowchart LR
+    subgraph Frontend["Frontend (docs/)"]
+        DASH["Dashboard<br/>Saldo • Receitas • Despesas"]
+        TRANS["Transações<br/>Filtros: tipo, categoria, período"]
+        GOALS["Metas<br/>Progresso + Aportes"]
+        CATS["Categorias<br/>Limite + Agregados"]
+    end
+
+    subgraph API["API FastAPI (Render)"]
+        AUTH["Auth • JWT + Refresh rotativo"]
+        USERS["Usuários • Admin"]
+        TX["Transações CRUD"]
+        CAT["Categorias + Agregados"]
+        GOAL["Metas + Aportes"]
+        RPT["Relatórios Mensais"]
+    end
+
+    DB[("PostgreSQL<br/>Neon")]
+
+    DASH -->|HTTPS| AUTH
+    TRANS -->|Bearer JWT| TX
+    GOALS -->|Bearer JWT| GOAL
+    CATS -->|Bearer JWT| CAT
+    USERS -.->|Admin| USERS
+    TX & CAT & GOAL & USERS -->|SQLAlchemy| DB
+    RPT -->|Bearer JWT| TX
+```
+
+**O que o projeto cobre hoje:** autenticação, gestão de conta, CRUD de transações, categorias, metas e relatórios mensais. Ficam de fora recursos como importação/exportação, gráficos, recorrência e painel de administração.
+
 ## Funcionalidades
 
-- Cadastro, login e perfil (`/auth`, `/usuarios`)
-- Senhas em **Argon2** e autenticação **JWT** (OAuth2 Password Flow)
-- CRUD de **transações**, **categorias** (agregados e limite) e **metas** (aporte e progresso)
-- Isolamento por usuário e papel de **admin**
-- Desativação de conta, com invalidação imediata do token
+- **Contas:** cadastro, login, perfil, troca de senha, desativação e exclusão (remove dados em cascata).
+- **Login:** senha protegida com **Argon2**, access token JWT de 30 min e refresh token de 7 dias com rotação. Logout revoga a sessão.
+- **Transações:** criar, listar, buscar, atualizar, excluir, com paginação, busca por descrição e filtros por tipo, categoria e período.
+- **Categorias:** CRUD com agregados automáticos (saldo, total receitas/despesas, % do limite) e validação de limite > inicial.
+- **Metas:** CRUD com aporte progressivo, teto de 100% no progresso e validação de datas/valores.
+- **Relatórios:** soma mensal de receitas e despesas com isolamento por usuário.
+- **Isolamento:** toda consulta usa o `usuario_id` do token; acesso a dado alheio responde **404**.
+- **Produção:** migrações com Alembic, CORS restrito, rate limiting no login e health check.
 
 ## Stack
 
 | Camada | Tecnologia |
 |---|---|
 | Linguagem | Python 3.10+ (testado em 3.14) |
-| Framework | FastAPI 0.162 |
-| ORM | SQLAlchemy 2.1 |
-| Validação/serialização | Pydantic 2.14 + pydantic-settings |
-| Banco | PostgreSQL 18 |
+| Framework | FastAPI 0.162 + Uvicorn |
+| ORM / banco | SQLAlchemy 2.1 + PostgreSQL (psycopg 3) |
+| Validação | Pydantic 2.14 + pydantic-settings |
 | Migrações | Alembic 1.20 |
-| Servidor | Uvicorn |
-| Hash de senha | pwdlib (Argon2) |
-| Token | PyJWT (HS256) |
-| Qualidade | mypy + pytest/TestClient (PostgreSQL) |
+| Autenticação | PyJWT (HS256), pwdlib (Argon2), slowapi |
+| Frontend | HTML5, CSS3, JavaScript (módulos ES) |
+| Testes | pytest + TestClient sobre PostgreSQL real |
+| Deploy | Render (API) + Neon (PostgreSQL) |
 
 ## Como rodar
 
-**Requisitos:** Python 3.10 ou superior, PostgreSQL 18 e `git`.
+Antes de começar, você precisa de Python 3.10+, PostgreSQL e Git.
 
 ```bash
-# 1. Clone
 git clone <url-do-repositorio>
-cd controle-financeiro
+cd controle_financeiro
 
-# 2. Ambiente virtual
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
-
-# 3. Dependências
 pip install -r requirements.txt
 
-# 4. Configuração
 cp .env.example .env
 python -c "import secrets; print(secrets.token_hex(32))"
 # cole o valor em SECRET_KEY no .env
 ```
 
-O `.env` deve ficar assim:
-
-```env
-DATABASE_URL=postgresql+psycopg://postgres:senha@localhost:5432/controle_financeiro
-SECRET_KEY=<a chave gerada acima>
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-```
+Preencha `SECRET_KEY` com a chave gerada e ajuste `DATABASE_URL` para o seu PostgreSQL local (driver `psycopg` 3). Depois:
 
 ```bash
-# 5. Banco e migrações (a partir da raiz do projeto)
-createdb -h localhost -U postgres controle_financeiro  # se ainda não existir
-alembic upgrade head
-
-# 6. Servidor (de dentro de src/)
+alembic upgrade head    # da raiz do projeto
 cd src
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8000
 ```
 
-Acesse **http://localhost:8000/docs** para a documentação interativa.
+> [!TIP]
+> O schema vem das migrações, não de `create_all`. Rode `alembic upgrade head` da raiz (onde está o `alembic.ini`). O Uvicorn roda de dentro de `src/`.
+>
+> No Windows: `set PYTHONPATH=.` (cmd) ou `$env:PYTHONPATH="."` (PowerShell) se precisar rodar o Alembic de outro local.
 
-> **Banco:** PostgreSQL. O schema é criado e versionado pelas migrações do Alembic (`alembic upgrade head`); a aplicação não executa `create_all`.
+Documentação local: **http://localhost:8000/docs**.
 
-### Primeiro usuário admin
+<details>
+<summary>Variáveis de ambiente e comandos do Alembic</summary>
 
-Nenhuma rota promove usuários a admin. Defina o primeiro direto no banco, após criar a conta pela API:
+| Variável | Padrão | Uso |
+|---|---|---|
+| `SECRET_KEY` | — | Assinatura do JWT (obrigatória) |
+| `ALGORITHM` | `HS256` | Algoritmo do token |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Validade do access token |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Validade do refresh token |
+| `DATABASE_URL` | — | Conexão PostgreSQL (obrigatória) |
+| `TEST_DATABASE_URL` | — | Banco isolado para testes (opcional) |
+| `CORS_ORIGINS` | `http://localhost:8800,https://moisesmayyer.github.io` | Origens permitidas, separadas por vírgula |
 
 ```bash
-# a partir da raiz do projeto (use as credenciais do DATABASE_URL)
-psql -h localhost -U postgres -d controle_financeiro -c "UPDATE usuarios SET admin = 1 WHERE id = 1;"
+alembic upgrade head                              # aplica as migrações pendentes
+alembic current                                   # revisão aplicada
+alembic history                                   # histórico
+alembic revision --autogenerate -m "descricao"    # nova revisão a partir dos models
+alembic downgrade -1                              # desfaz a última
 ```
+
+Para zerar o banco local: `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` e rode `alembic upgrade head` de novo.
+
+</details>
+
+> [!WARNING]
+> `.env` contém segredos e é ignorado pelo Git. Nunca faça commit da `SECRET_KEY`, da senha do banco ou de um `.env` real.
 
 ### Testes
 
-A suíte usa **PostgreSQL real** e recria as tabelas a cada teste (`drop_all`/`create_all`), sem tocar no banco de desenvolvimento. Crie o banco de teste uma vez:
+A suíte usa **PostgreSQL real** e recria o schema a cada teste. Crie o banco uma vez:
 
 ```bash
 createdb -h localhost -U postgres test_controle_financeiro
-```
-
-Com o `.env` configurado e as dependências instaladas:
-
-```bash
+pip install -r requirements.txt  # já inclui pytest e httpx
 pytest tests/test_routers
 ```
 
-O `tests/conftest.py` deriva `test_controle_financeiro` a partir de `DATABASE_URL` e aceita `TEST_DATABASE_URL` para sobrescrever. Por segurança, a suíte só roda se o nome do banco começar com `test_`.
+O `tests/conftest.py` deriva `test_controle_financeiro` a partir de `DATABASE_URL`, aceita `TEST_DATABASE_URL` e só roda se o nome do banco começar com `test_`.
 
-> A suíte oficial tem **241 testes** em `tests/test_routers/`: autenticação (15), usuários (55), categorias (47), transações (52), metas (46) e relatórios (26). O arquivo local `tests/test_exemplos_fixtures.py` é um rascunho didático de fixtures não versionado; se existir, `pytest` o inclui (253 no total).
+## Deploy
+
+**API — Render**
+
+- **Root directory:** raiz do repositório.
+- **Build:** `pip install -r requirements.txt`
+- **Start:** `alembic upgrade head && cd src && uvicorn main:app --host 0.0.0.0 --port $PORT`
+- **Variáveis:** as mesmas do `.env` (incluindo `DATABASE_URL` do Neon).
+
+> [!IMPORTANT]
+> O plano gratuito do Render coloca a API para dormir. A primeira requisição depois de um tempo parada pode levar alguns segundos (**cold start**).
+
+**Banco — Neon**
+
+- PostgreSQL gerenciado, branch `main` para produção.
+- `DATABASE_URL` no formato `postgresql+psycopg://user:pass@ep-xxx.region.aws.neon.tech/dbname?sslmode=require`.
+- Migrações aplicadas no start do Render via `alembic upgrade head`.
+
+**CORS**
+
+Em produção, mantenha apenas a origem publicada:
+
+```env
+CORS_ORIGINS=https://seu-frontend.github.io
+```
+
+Para desenvolver localmente, adicione `http://localhost:8800` e `http://127.0.0.1:8800`.
 
 ## Como usar
 
-### 1. Criar uma conta
+Se o frontend estiver aberto, crie uma conta pela tela de cadastro — ele já entra em seguida. Para testar a API direto:
 
 ```bash
+# 1. Criar conta
 curl -X POST http://localhost:8000/usuarios/ \
   -H "Content-Type: application/json" \
   -d '{"nome": "Ana", "email": "ana@email.com", "senha": "senha123"}'
-```
 
-```json
-{"id": 1, "nome": "Ana", "email": "ana@email.com", "ativo": true, "admin": false}
-```
-
-### 2. Fazer login e obter o token
-
-O login usa `application/x-www-form-urlencoded` (OAuth2), não JSON:
-
-```bash
+# 2. Login (form-urlencoded, padrão OAuth2)
 curl -X POST http://localhost:8000/auth/login \
   -d "username=ana@email.com&password=senha123"
-```
 
-```json
-{"access_token": "eyJhbGciOiJIUzI1NiIs...", "token_type": "bearer"}
-```
-
-### 3. Usar o token nas rotas protegidas
-
-```bash
+# 3. Guardar o access token e criar uma transação
 TOKEN="cole-o-access-token-aqui"
-
-curl http://localhost:8000/transacoes/ \
-  -H "Authorization: Bearer $TOKEN"
+curl -X POST http://localhost:8000/transacoes/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"descricao": "Salário", "valor": 3000, "tipo": "receita", "data": "2026-10-01"}'
 ```
 
-No Swagger, use **Authorize** com e-mail e senha.
-
-### 4. Fluxo completo: categoria, transação e agregados
+<details>
+<summary>Exemplos de refresh, logout, categoria com limite, meta e relatórios</summary>
 
 ```bash
+# Renova o par; o refresh usado é revogado (rotação)
+curl -X POST http://localhost:8000/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refresh_token": "cole-o-refresh-token"}'
+
+# Logout: revoga o refresh token (204, idempotente)
+curl -i -X POST http://localhost:8000/auth/logout \
+  -H "Content-Type: application/json" \
+  -d '{"refresh_token": "cole-o-refresh-token"}'
+
 # Categoria com limite de R$ 400 e saldo inicial de R$ 100
 curl -X POST http://localhost:8000/categorias/ \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"nome": "Lazer", "valor_inicial": 100, "valor_limite": 400}'
 
-# Despesa de R$ 50 nessa categoria
-curl -X POST http://localhost:8000/transacoes/ \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"descricao": "Cinema", "valor": 50, "tipo": "despesa", "data": "2026-10-19", "categoria_id": 1}'
-```
-
-Ao buscar a categoria, os agregados vêm calculados:
-
-```bash
-curl http://localhost:8000/categorias/1 -H "Authorization: Bearer $TOKEN"
-```
-
-```json
-{
-  "nome": "Lazer",
-  "valor_inicial": 100.0,
-  "valor_limite": 400.0,
-  "id": 1,
-  "usuario_id": 1,
-  "total_despesas": 50.0,
-  "total_receitas": 0.0,
-  "saldo": 50.0,
-  "porcentagem_limite": 12.5
-}
-```
-
-### 5. Meta com aporte
-
-```bash
+# Meta com aporte
 curl -X POST http://localhost:8000/metas/ \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
@@ -218,126 +237,74 @@ curl -X POST http://localhost:8000/metas/1/adicionar-valor \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"valor": 750}'
-```
 
-A resposta traz `"porcentagem": 100.0`.
-
-## Endpoints
-
-Transações, categorias, metas e as rotas protegidas de usuários exigem `Authorization: Bearer <token>`. Nas três primeiras, registro de outro dono responde **404**; em `/usuarios`, **403**.
-
-### Autenticação
-
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| POST | `/auth/login` | público | Login via form; devolve o JWT |
-| GET | `/auth/me` | autenticado | Usuário do token |
-
-### Usuários
-
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/usuarios/` | autenticado | Lista paginada: admin vê todos; comum, só a si |
-| GET | `/usuarios/{id}` | dono ou admin | Busca usuário |
-| POST | `/usuarios/` | público | Cria conta (`201`) |
-| PUT | `/usuarios/{id}` | dono ou admin | Edita nome, e-mail e senha; `ativo` só admin |
-| PATCH | `/usuarios/{id}/cancelar` | dono ou admin | Desativa (`ativo = false`) |
-| DELETE | `/usuarios/{id}` | dono ou admin | Remove conta e dados (`204`) |
-
-### Transações
-
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/transacoes/` | autenticado | Lista paginada com filtros |
-| GET | `/transacoes/{id}` | dono | Busca |
-| POST | `/transacoes/` | autenticado | Cria (`201`) |
-| PUT | `/transacoes/{id}` | dono | Atualiza; `categoria_id: null` desvincula |
-| DELETE | `/transacoes/{id}` | dono | Remove |
-
-### Categorias
-
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/categorias/` | autenticado | Lista paginada com agregados |
-| GET | `/categorias/{id}` | dono | Busca com agregados |
-| POST | `/categorias/` | autenticado | Cria (`201`) |
-| PUT | `/categorias/{id}` | dono | Atualiza |
-| DELETE | `/categorias/{id}` | dono | Remove se não houver transações |
-
-### Metas
-
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/metas/` | autenticado | Lista paginada com progresso |
-| GET | `/metas/{id}` | dono | Busca |
-| POST | `/metas/` | autenticado | Cria (`201`) |
-| PUT | `/metas/{id}` | dono | Atualiza |
-| DELETE | `/metas/{id}` | dono | Remove |
-| POST | `/metas/{id}/adicionar-valor` | dono | Adiciona ao progresso |
-
-### Relatórios
-
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/relatorios/receitas` | autenticado | Lista receitas, com paginação e busca |
-| GET | `/relatorios/despesas` | autenticado | Lista despesas, com paginação e busca |
-| GET | `/relatorios/valor_receita` | autenticado | Soma das receitas do mês (`ano`, `mes`) |
-| GET | `/relatorios/valor_despesas` | autenticado | Soma das despesas do mês (`ano`, `mes`) |
-
-### Sistema
-
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/` | público | Nome e versão da API |
-| GET | `/health` | público | Health check |
-
-### Paginação e filtros
-
-Todas as listagens (`/usuarios/`, `/transacoes/`, `/categorias/`, `/metas/`, `/relatorios/receitas` e `/relatorios/despesas`) retornam um envelope:
-
-```json
-{"items": [], "total": 42, "skip": 0, "limit": 10}
-```
-
-| Parâmetro | Onde | Descrição |
-|---|---|---|
-| `skip` | todas | Quantos registros pular (padrão `0`) |
-| `limit` | todas | Tamanho da página (padrão `10`, máximo `100`) |
-| `busca` | todas | Trecho de nome, descrição ou e-mail, sem diferenciar maiúsculas |
-| `tipo` | transações | `receita` ou `despesa` |
-| `categoria_id` | transações | Filtra por categoria |
-| `data_inicio` / `data_fim` | transações | Período inclusivo (`AAAA-MM-DD`) |
-
-`skip` negativo ou `limit` fora de `1..100` retornam `422`; `data_inicio` maior que `data_fim` retorna `400`.
-
-```bash
-curl "http://localhost:8000/transacoes/?tipo=despesa&data_inicio=2026-10-01&data_fim=2026-10-31&skip=0&limit=10" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-### Relatórios mensais
-
-`/relatorios/valor_receita` e `/relatorios/valor_despesas` exigem `ano` (`2000..2100`) e `mes` (`1..12`) e retornam apenas o total do período:
-
-```json
-{"valor_total": 1500.5}
-```
-
-```bash
+# Relatório mensal de despesas
 curl "http://localhost:8000/relatorios/valor_despesas?ano=2026&mes=10" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-Mês sem lançamentos retorna `{"valor_total": 0.0}`.
+</details>
+
+Frontend local (módulos ES precisam de HTTP; `file://` não funciona):
+
+```bash
+python -m http.server 8800 --directory docs
+```
+
+Abra **http://localhost:8800**.
+
+## Endpoints
+
+As rotas protegidas pedem `Authorization: Bearer <token>`. "Dono" quer dizer que o registro pertence ao usuário logado; se não pertencer, a resposta é **404**.
+
+| Grupo | Método | Rota | Acesso | Descrição |
+|---|---|---|---|---|
+| Auth | POST | `/auth/login` | público | Autentica e devolve access + refresh |
+| Auth | POST | `/auth/refresh` | público | Renova o par, rotacionando o refresh |
+| Auth | POST | `/auth/logout` | público | Revoga o refresh (`204`) |
+| Auth | GET | `/auth/me` | autenticado | Usuário do token |
+| Usuários | GET | `/usuarios/` | autenticado | Lista paginada: admin vê todos; comum, só a si |
+| Usuários | GET | `/usuarios/{id}` | dono ou admin | Busca usuário |
+| Usuários | POST | `/usuarios/` | público | Cria conta (`201`) |
+| Usuários | PUT | `/usuarios/{id}` | dono ou admin | Edita nome, e-mail e senha; `ativo` só admin |
+| Usuários | PATCH | `/usuarios/{id}/cancelar` | dono ou admin | Desativa a conta |
+| Usuários | DELETE | `/usuarios/{id}` | dono ou admin | Remove conta e dados (`204`) |
+| Transações | GET | `/transacoes/` | autenticado | Lista paginada com filtros |
+| Transações | GET | `/transacoes/{id}` | dono | Busca |
+| Transações | POST | `/transacoes/` | autenticado | Cria (`201`) |
+| Transações | PUT | `/transacoes/{id}` | dono | Atualiza; `categoria_id: null` desvincula |
+| Transações | DELETE | `/transacoes/{id}` | dono | Remove |
+| Categorias | GET | `/categorias/` | autenticado | Lista paginada com agregados |
+| Categorias | GET | `/categorias/{id}` | dono | Busca com agregados |
+| Categorias | POST | `/categorias/` | autenticado | Cria (`201`) |
+| Categorias | PUT | `/categorias/{id}` | dono | Atualiza |
+| Categorias | DELETE | `/categorias/{id}` | dono | Remove se não houver transações |
+| Metas | GET | `/metas/` | autenticado | Lista paginada com progresso |
+| Metas | GET | `/metas/{id}` | dono | Busca |
+| Metas | POST | `/metas/` | autenticado | Cria (`201`) |
+| Metas | PUT | `/metas/{id}` | dono | Atualiza |
+| Metas | DELETE | `/metas/{id}` | dono | Remove |
+| Metas | POST | `/metas/{id}/adicionar-valor` | dono | Adiciona ao progresso |
+| Relatórios | GET | `/relatorios/receitas` | autenticado | Lista receitas, com paginação e busca |
+| Relatórios | GET | `/relatorios/despesas` | autenticado | Lista despesas, com paginação e busca |
+| Relatórios | GET | `/relatorios/valor_receita` | autenticado | Soma das receitas do mês (`ano`, `mes`) |
+| Relatórios | GET | `/relatorios/valor_despesas` | autenticado | Soma das despesas do mês (`ano`, `mes`) |
+| Sistema | GET | `/` | público | Nome e versão da API |
+| Sistema | GET | `/health` | público | Health check |
+
+`GET /transacoes/`, `/categorias/`, `/metas/`, `/usuarios/` e `/relatorios/` aceitam `skip` (padrão `0`), `limit` (padrão `10`, máx `100`) e `busca`. Transações têm também `tipo`, `categoria_id`, `data_inicio`, `data_fim`. A resposta é `{ "items": [...], "total": 42, "skip": 0, "limit": 10 }`.
 
 ## Regras de negócio
 
 | Recurso | Regra |
 |---|---|
-| Usuário | Nome de 3 a 100 caracteres; e-mail válido e único; senha com 6+ caracteres. Só admin altera `ativo`; `admin` não é editável pela API |
-| Transação | `valor > 0`; `tipo` `receita`/`despesa`; `data` obrigatória; `descricao` de 1 a 255 caracteres. Categoria, quando informada, deve existir e pertencer ao usuário |
-| Categoria | Nome único por usuário; `valor_limite > valor_inicial` e `> 0`; não removível com transações; `saldo = inicial + receitas − despesas`; teto de 100% no `porcentagem_limite` |
-| Meta | `valor_inicial >= 0`; `valor_final >= valor_inicial` e `> 0`; `data_fim` posterior a `data_inicio` quando ambas forem informadas; aporte positivo e limitado ao `valor_final`; teto de 100% na `porcentagem` |
+| Usuário | Nome 3–100 chars; e-mail válido e único; senha 6+ chars. Só admin altera `ativo`; `admin` não é editável pela API |
+| Transação | `valor > 0`; `tipo` receita/despesa; `data` obrigatória; `descricao` 1–255 chars. Categoria deve existir e pertencer ao usuário |
+| Categoria | Nome único por usuário; `valor_limite > valor_inicial > 0`; não removível com transações; `saldo = inicial + receitas − despesas`; teto de 100% no `% limite` |
+| Meta | `valor_inicial >= 0`; `valor_final >= valor_inicial > 0`; `data_fim > data_inicio` quando ambas; aporte positivo limitado ao `valor_final`; teto de 100% no `%` |
+
+> [!CAUTION]
+> A exclusão da conta é definitiva e remove todas as transações, categorias, metas e sessões. A API não oferece recuperação nem lixeira.
 
 ## Códigos de status
 
@@ -346,22 +313,23 @@ Mês sem lançamentos retorna `{"valor_total": 0.0}`.
 | `200` | Leitura, edição e remoção de transação/categoria/meta, cancelamento e aporte |
 | `201` | Criação de usuário, transação, categoria ou meta |
 | `204` | Remoção de usuário (sem corpo) |
-| `400` | E-mail/categoria duplicados, categoria inexistente ou de outro dono, categoria com transações, limites/datas inválidos na edição, período invertido nos filtros, aporte acima do `valor_final` |
+| `400` | E-mail/categoria duplicados, categoria inexistente ou de outro dono, categoria com transações, limites/datas inválidos, período invertido, aporte acima do `valor_final` |
 | `401` | Sem token, token inválido/expirado, usuário inativo ou credenciais incorretas |
 | `403` | `/usuarios` de outro dono ou alteração de `ativo` sem ser admin |
 | `404` | Recurso inexistente ou de outro usuário em transações, categorias e metas |
 | `422` | Payload inválido pelo Pydantic, incluindo limites inválidos na criação |
+| `429` | Rate limit excedido no login |
 
 ## Modelo de dados
 
-```
+```text
 usuarios (1) ──< categorias
-             ──< transacoes
-             ──< metas
+              ──< transacoes
+              ──< metas
 categorias (1) ──< transacoes
 ```
 
-| Tabela | Campos |
+| Tabela | Campos principais |
 |---|---|
 | `usuarios` | `id`, `nome`, `email` (único), `senha_hash`, `ativo`, `admin` |
 | `categorias` | `id`, `nome`, `valor_inicial`, `valor_limite`, `usuario_id` |
@@ -375,7 +343,7 @@ categorias (1) ──< transacoes
 
 ## Estrutura do projeto
 
-```
+```text
 .
 ├── alembic.ini                  # Configuração do Alembic
 ├── migrations/                  # Migrações do banco
@@ -388,6 +356,7 @@ categorias (1) ──< transacoes
 │   │   ├── database.py          # Engine, Base e SessionLocal
 │   │   ├── dependencies.py      # get_db e verificar_token
 │   │   ├── security.py          # Argon2 e JWT
+│   │   ├── limiter.py           # Rate limiting
 │   │   ├── models/              # Tabelas SQLAlchemy
 │   │   │   ├── usuario.py
 │   │   │   ├── transacao.py
@@ -398,25 +367,28 @@ categorias (1) ──< transacoes
 │   │       ├── token.py
 │   │       ├── transacao.py
 │   │       ├── categoria.py
-│   │       └── meta.py
+│   │       ├── meta.py
+│   │       └── relatorio.py
 │   └── rotas/
-│       ├── auth/crud.py         # Login e /me
+│       ├── auth/crud.py         # Login, refresh, logout, /me
 │       ├── usuarios/crud.py
 │       ├── transacoes/crud.py
 │       ├── categorias/crud.py   # Agregados
-│       └── metas/crud.py        # Aporte
+│       ├── metas/crud.py        # Aporte
+│       └── relatorios/crud.py
 ├── tests/
 │   ├── conftest.py              # Fixtures e banco de teste
-│   └── test_routers/
-│       ├── test_auth.py
-│       ├── test_usuarios.py
-│       ├── test_categorias.py
-│       ├── test_transacoes.py
-│       └── test_metas.py
-├── pyproject.toml               # Configuração do pytest
+│   └── test_routers/            # 241 testes: auth, usuários, categorias, transações, metas, relatórios
+├── docs/                        # Frontend (HTML/CSS/JS)
+├── pyproject.toml
 ├── requirements.txt
 └── .env.example
 ```
+
+## Frontend
+
+> [!NOTE]
+> O frontend foi feito com ajuda de inteligência artificial. Como o foco do projeto é o **backend**, a interface serve apenas como demonstração visual para testar a API.
 
 ## Decisões técnicas
 
@@ -432,49 +404,38 @@ categorias (1) ──< transacoes
 
 **`float` em vez de `Decimal`.** Controle pessoal, não contabilidade; em produção, `Decimal` ou centavos evitariam arredondamentos.
 
+**Refresh token rotativo.** A cada uso do `/auth/refresh`, o refresh antigo é revogado e um novo é emitido.
+
 ## Qualidade
 
-Verificação de tipos com mypy:
-
-```bash
-mypy --ignore-missing-imports --explicit-package-bases src
-# Success: no issues found in 29 source files
-```
-
-A suíte oficial tem **241 testes** com `pytest` + `TestClient` sobre PostgreSQL:
-
-- **autenticação (15):** login válido/inválido, conta desativada, token ausente/inválido/expirado/sem `sub` e usuário inexistente ou inativo;
-- **usuários (55):** criação e validação, e-mail duplicado, isolamento por dono, admin, listagem paginada e busca, atualização parcial e de senha, cancelamento, exclusão e cascade dos dados;
-- **categorias (47):** CRUD, nome único por usuário, validação dos limites, listagem paginada e busca, agregados de receitas/despesas, saldo e teto de 100%;
-- **transações (52):** CRUD, tipos válidos, validações de valor/data, listagem paginada com busca e filtros de tipo, categoria e período, categoria do próprio usuário e desvinculação;
-- **metas (46):** CRUD, validação de valores/datas, listagem paginada e busca, aporte limitado ao `valor_final` e progresso com teto de 100%;
-- **relatórios (26):** listagem de receitas/despesas por tipo com busca, soma mensal de receitas e despesas, mês vazio, isolamento por usuário, virada de dezembro e parâmetros inválidos.
-
-Os módulos de rotas (`auth`, `usuarios`, `categorias`, `transacoes` e `metas`) têm **100% de cobertura de linhas e branches**; no pacote `src`, a cobertura total é **99%** (ficam de fora `/`, `/health` e o ramo de `sub` não numérico em `dependencies.py`).
+- **Tipagem:** `mypy --ignore-missing-imports --explicit-package-bases src` → *Success: no issues found in 29 source files*
+- **Testes:** `pytest` + `TestClient` em PostgreSQL real, **241 testes** cobrindo auth, isolamento, limites, metas e relatórios
+- **Cobertura:** Módulos de rotas com **100% de linhas e branches**; pacote `src` em **99%** (fora `/`, `/health` e ramo de `sub` não numérico)
 
 ## O que falta
 
-Itens conhecidos, em ordem de prioridade:
+Em ordem de prioridade:
 
 **Essencial**
 
-- [X] Suíte com `pytest` + `TestClient` (241 testes: autenticação, isolamento, limites e metas)
-- [X] Paginação e filtros (`tipo`, `data_inicio`/`data_fim`, `categoria_id`, `skip`/`limit`)
-- [X] Relatório mensal de receitas e despesas
+- [x] Suíte com `pytest` + `TestClient` (241 testes)
+- [x] Paginação e filtros (`tipo`, `data_inicio`/`data_fim`, `categoria_id`, `skip`/`limit`)
+- [x] Relatório mensal de receitas e despesas
 
 **Qualidade**
-- [X] Migrations com Alembic
-- [X] `criado_em` / `atualizado_em` (auditoria)
-- [X] `model_config = ConfigDict(from_attributes=True)` no lugar do `class Config` (depreciado no Pydantic v2)
+
+- [x] Migrations com Alembic
+- [x] `criado_em` / `atualizado_em` (auditoria)
+- [x] `model_config = ConfigDict(from_attributes=True)` (Pydantic v2)
 
 **Produção**
 
-- [X] CI no GitHub Actions com pytest
-- [X] CORS configurado
-- [ ] Refresh token e revogação de access token
-- [X] Rate limiting no login
-- [X] Deploy com link público
+- [x] CORS configurado
+- [x] Refresh token rotativo
+- [x] Rate limiting no login
+- [x] Deploy com link público (Render + Neon)
+- [ ] CI no GitHub Actions com pytest
 
 ## Status do projeto
 
-Em desenvolvimento, com autenticação JWT, isolamento por usuário, paginação e filtros, CRUD completo de transações, categorias e metas e relatórios mensais sobre PostgreSQL. A suíte oficial tem 241 testes e os módulos de rotas estão cobertos em 100% de linhas e branches; CI e melhorias de produção são os próximos passos.
+O projeto está no ar: API no Render, banco no Neon e CRUD completo com JWT sobre PostgreSQL. Autenticação, isolamento por usuário, paginação, filtros, agregados de categorias, metas com progresso e relatórios mensais funcionando. A suíte tem 241 testes, mypy limpo e cobertura alta. Próximo passo: CI no GitHub Actions.
