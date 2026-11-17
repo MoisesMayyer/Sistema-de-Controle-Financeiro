@@ -8,7 +8,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
 ![Alembic](https://img.shields.io/badge/Alembic-1.20-6BA81E)
 ![mypy](https://img.shields.io/badge/mypy-passing-2A6DB0)
-![pytest](https://img.shields.io/badge/pytest-241%20testes-0A9EDC?logo=pytest&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-249%20testes-0A9EDC?logo=pytest&logoColor=white)
 ![Neon](https://img.shields.io/badge/Neon-0065FF?logo=neon&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=white)
 
@@ -63,13 +63,14 @@ flowchart LR
 ## Funcionalidades
 
 - **Contas:** cadastro, login, perfil, troca de senha, desativação e exclusão (remove dados em cascata).
-- **Login:** senha protegida com **Argon2**, access token JWT de 30 min e refresh token de 7 dias com rotação. Logout revoga a sessão.
+- **Login:** senha protegida com **Argon2**, access token JWT de 30 min e refresh token de 7 dias com rotação stateless (novos tokens emitidos a cada refresh; tokens antigos expiram naturalmente).
 - **Transações:** criar, listar, buscar, atualizar, excluir, com paginação, busca por descrição e filtros por tipo, categoria e período.
 - **Categorias:** CRUD com agregados automáticos (saldo, total receitas/despesas, % do limite) e validação de limite > inicial.
 - **Metas:** CRUD com aporte progressivo, teto de 100% no progresso e validação de datas/valores.
 - **Relatórios:** soma mensal de receitas e despesas com isolamento por usuário.
 - **Isolamento:** toda consulta usa o `usuario_id` do token; acesso a dado alheio responde **404**.
-- **Produção:** migrações com Alembic, CORS restrito, rate limiting no login e health check.
+- **Auditoria:** timestamps `criado_em` e `atualizado_em` em todas as tabelas.
+- **Produção:** migrações com Alembic, CORS restrito, rate limiting e health check.
 
 ## Stack
 
@@ -208,16 +209,11 @@ curl -X POST http://localhost:8000/transacoes/ \
 ```
 
 <details>
-<summary>Exemplos de refresh, logout, categoria com limite, meta e relatórios</summary>
+<summary>Exemplos de refresh, categoria com limite, meta e relatórios</summary>
 
 ```bash
-# Renova o par; o refresh usado é revogado (rotação)
+# Renova o par de tokens (rotação stateless: o refresh antigo expira naturalmente)
 curl -X POST http://localhost:8000/auth/refresh \
-  -H "Content-Type: application/json" \
-  -d '{"refresh_token": "cole-o-refresh-token"}'
-
-# Logout: revoga o refresh token (204, idempotente)
-curl -i -X POST http://localhost:8000/auth/logout \
   -H "Content-Type: application/json" \
   -d '{"refresh_token": "cole-o-refresh-token"}'
 
@@ -260,8 +256,7 @@ As rotas protegidas pedem `Authorization: Bearer <token>`. "Dono" quer dizer que
 | Grupo | Método | Rota | Acesso | Descrição |
 |---|---|---|---|---|
 | Auth | POST | `/auth/login` | público | Autentica e devolve access + refresh |
-| Auth | POST | `/auth/refresh` | público | Renova o par, rotacionando o refresh |
-| Auth | POST | `/auth/logout` | público | Revoga o refresh (`204`) |
+| Auth | POST | `/auth/refresh` | público | Renova o par de tokens (rotação stateless) |
 | Auth | GET | `/auth/me` | autenticado | Usuário do token |
 | Usuários | GET | `/usuarios/` | autenticado | Lista paginada: admin vê todos; comum, só a si |
 | Usuários | GET | `/usuarios/{id}` | dono ou admin | Busca usuário |
@@ -306,40 +301,26 @@ As rotas protegidas pedem `Authorization: Bearer <token>`. "Dono" quer dizer que
 > [!CAUTION]
 > A exclusão da conta é definitiva e remove todas as transações, categorias, metas e sessões. A API não oferece recuperação nem lixeira.
 
-## Códigos de status
-
-| Código | Quando acontece |
-|---|---|
-| `200` | Leitura, edição e remoção de transação/categoria/meta, cancelamento e aporte |
-| `201` | Criação de usuário, transação, categoria ou meta |
-| `204` | Remoção de usuário (sem corpo) |
-| `400` | E-mail/categoria duplicados, categoria inexistente ou de outro dono, categoria com transações, limites/datas inválidos, período invertido, aporte acima do `valor_final` |
-| `401` | Sem token, token inválido/expirado, usuário inativo ou credenciais incorretas |
-| `403` | `/usuarios` de outro dono ou alteração de `ativo` sem ser admin |
-| `404` | Recurso inexistente ou de outro usuário em transações, categorias e metas |
-| `422` | Payload inválido pelo Pydantic, incluindo limites inválidos na criação |
-| `429` | Rate limit excedido no login |
-
 ## Modelo de dados
 
 ```text
 usuarios (1) ──< categorias
-              ──< transacoes
-              ──< metas
+               ──< transacoes
+               ──< metas
 categorias (1) ──< transacoes
 ```
 
 | Tabela | Campos principais |
 |---|---|
-| `usuarios` | `id`, `nome`, `email` (único), `senha_hash`, `ativo`, `admin` |
-| `categorias` | `id`, `nome`, `valor_inicial`, `valor_limite`, `usuario_id` |
-| `transacoes` | `id`, `descricao`, `valor`, `tipo`, `data`, `categoria_id` (opcional), `usuario_id` |
-| `metas` | `id`, `nome`, `valor_inicial`, `valor_final`, `data_inicio`, `data_fim`, `usuario_id` |
+| `usuarios` | `id`, `nome`, `email` (único), `senha_hash`, `ativo`, `admin`, `criado_em`, `atualizado_em` |
+| `categorias` | `id`, `nome`, `valor_inicial`, `valor_limite`, `usuario_id`, `criado_em`, `atualizado_em` |
+| `transacoes` | `id`, `descricao`, `valor`, `tipo`, `data`, `categoria_id` (opcional), `usuario_id`, `criado_em`, `atualizado_em` |
+| `metas` | `id`, `nome`, `valor_inicial`, `valor_final`, `data_inicio`, `data_fim`, `usuario_id`, `criado_em`, `atualizado_em` |
 
 - `usuarios.email` é único e indexado; `categorias` tem `UNIQUE (usuario_id, nome)`.
 - `usuario_id` é `NOT NULL` e indexado em `categorias`, `transacoes` e `metas`; remover um usuário apaga seus dados em cascata pelo ORM.
 - `transacoes.categoria_id` é opcional e referencia `categorias.id`; transações sem categoria não entram nos agregados.
-- O schema é versionado pelo Alembic; a revisão inicial (`ca0004d3e874`) cria as quatro tabelas, os índices e as constraints. Aplique com `alembic upgrade head`.
+- O schema é versionado pelo Alembic; a revisão inicial (`ca0004d3e874`) cria as quatro tabelas, os índices e as constraints. A revisão `aff658fec782` adiciona timestamps de auditoria. Aplique com `alembic upgrade head`.
 
 ## Estrutura do projeto
 
@@ -358,6 +339,8 @@ categorias (1) ──< transacoes
 │   │   ├── security.py          # Argon2 e JWT
 │   │   ├── limiter.py           # Rate limiting
 │   │   ├── models/              # Tabelas SQLAlchemy
+│   │   │   ├── __init__.py
+│   │   │   ├── mixins.py        # TimestampMixin
 │   │   │   ├── usuario.py
 │   │   │   ├── transacao.py
 │   │   │   ├── categoria.py
@@ -370,7 +353,7 @@ categorias (1) ──< transacoes
 │   │       ├── meta.py
 │   │       └── relatorio.py
 │   └── rotas/
-│       ├── auth/crud.py         # Login, refresh, logout, /me
+│       ├── auth/crud.py         # Login, refresh, /me
 │       ├── usuarios/crud.py
 │       ├── transacoes/crud.py
 │       ├── categorias/crud.py   # Agregados
@@ -378,11 +361,11 @@ categorias (1) ──< transacoes
 │       └── relatorios/crud.py
 ├── tests/
 │   ├── conftest.py              # Fixtures e banco de teste
-│   └── test_routers/            # 241 testes: auth, usuários, categorias, transações, metas, relatórios
+│   └── test_routers/            # 249 testes: auth, usuários, categorias, transações, metas, relatórios
 ├── docs/                        # Frontend (HTML/CSS/JS)
 ├── pyproject.toml
 ├── requirements.txt
-└── .env.example
+└── .env.example                 # Exemplo de variáveis de ambiente (criar manualmente)
 ```
 
 ## Frontend
@@ -404,12 +387,14 @@ categorias (1) ──< transacoes
 
 **`float` em vez de `Decimal`.** Controle pessoal, não contabilidade; em produção, `Decimal` ou centavos evitariam arredondamentos.
 
-**Refresh token rotativo.** A cada uso do `/auth/refresh`, o refresh antigo é revogado e um novo é emitido.
+**Refresh token rotativo (stateless).** A cada uso do `/auth/refresh`, novos tokens são emitidos; o refresh antigo expira pelo tempo (`exp`). Não há armazenamento nem revogação no servidor.
+
+**TimestampMixin para auditoria.** `criado_em` e `atualizado_em` com `server_default=func.now()` e `onupdate=func.now()` em todas as tabelas.
 
 ## Qualidade
 
 - **Tipagem:** `mypy --ignore-missing-imports --explicit-package-bases src` → *Success: no issues found in 29 source files*
-- **Testes:** `pytest` + `TestClient` em PostgreSQL real, **241 testes** cobrindo auth, isolamento, limites, metas e relatórios
+- **Testes:** `pytest` + `TestClient` em PostgreSQL real, **249 testes** cobrindo auth, isolamento, limites, metas e relatórios
 - **Cobertura:** Módulos de rotas com **100% de linhas e branches**; pacote `src` em **99%** (fora `/`, `/health` e ramo de `sub` não numérico)
 
 ## O que falta
@@ -418,7 +403,7 @@ Em ordem de prioridade:
 
 **Essencial**
 
-- [x] Suíte com `pytest` + `TestClient` (241 testes)
+- [x] Suíte com `pytest` + `TestClient` (249 testes)
 - [x] Paginação e filtros (`tipo`, `data_inicio`/`data_fim`, `categoria_id`, `skip`/`limit`)
 - [x] Relatório mensal de receitas e despesas
 
@@ -432,10 +417,10 @@ Em ordem de prioridade:
 
 - [x] CORS configurado
 - [x] Refresh token rotativo
-- [x] Rate limiting no login
+- [x] Rate limiting
 - [x] Deploy com link público (Render + Neon)
-- [ ] CI no GitHub Actions com pytest
+- [X] CI no GitHub Actions com pytest
 
 ## Status do projeto
 
-O projeto está no ar: API no Render, banco no Neon e CRUD completo com JWT sobre PostgreSQL. Autenticação, isolamento por usuário, paginação, filtros, agregados de categorias, metas com progresso e relatórios mensais funcionando. A suíte tem 241 testes, mypy limpo e cobertura alta. Próximo passo: CI no GitHub Actions.
+O projeto está no ar: API no Render, banco no Neon e CRUD completo com JWT sobre PostgreSQL. Autenticação, isolamento por usuário, paginação, filtros, agregados de categorias, metas com progresso e relatórios mensais funcionando. A suíte tem 249 testes, mypy limpo e cobertura alta. Próximos passos: CI no GitHub Actions e versão do `.env.example`.
