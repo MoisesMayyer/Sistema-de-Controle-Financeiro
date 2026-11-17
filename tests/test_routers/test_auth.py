@@ -153,3 +153,126 @@ def test_me_usuario_removido(client, usuario, headers):
     resposta = client.get("/auth/me", headers=headers)
 
     assert resposta.status_code == 401, resposta.text
+
+
+def test_login_retorna_refresh_token(client, usuario):
+    resposta = client.post(
+        "/auth/login",
+        data={"username": usuario["email"], "password": "senha12345"},
+    )
+
+    assert resposta.status_code == 200, resposta.text
+    corpo = resposta.json()
+    assert corpo["access_token"]
+    assert corpo["refresh_token"]
+    assert corpo["token_type"] == "bearer"
+
+
+def test_refresh_gera_novo_access_token(client, usuario):
+    login = client.post(
+        "/auth/login",
+        data={"username": usuario["email"], "password": "senha12345"},
+    ).json()
+
+    resposta = client.post(
+        "/auth/refresh", json={"refresh_token": login["refresh_token"]}
+    )
+
+    assert resposta.status_code == 200, resposta.text
+    corpo = resposta.json()
+    assert corpo["access_token"]
+    assert corpo["refresh_token"]
+
+    autenticado = client.get(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {corpo['access_token']}"},
+    )
+
+    assert autenticado.status_code == 200, autenticado.text
+    assert autenticado.json()["email"] == usuario["email"]
+
+
+def test_refresh_token_invalido(client):
+    resposta = client.post(
+        "/auth/refresh", json={"refresh_token": "token.invalido.aqui"}
+    )
+
+    assert resposta.status_code == 401, resposta.text
+
+
+def test_refresh_token_expirado(client, usuario):
+    token = jwt.encode(
+        {
+            "sub": str(usuario["id"]),
+            "type": "refresh",
+            "exp": datetime.now(timezone.utc) - timedelta(minutes=1),
+        },
+        settings.secret_key,
+        algorithm=settings.algorithm,
+    )
+
+    resposta = client.post("/auth/refresh", json={"refresh_token": token})
+
+    assert resposta.status_code == 401, resposta.text
+
+
+def test_access_token_nao_serve_como_refresh(client, usuario):
+    login = client.post(
+        "/auth/login",
+        data={"username": usuario["email"], "password": "senha12345"},
+    ).json()
+
+    resposta = client.post(
+        "/auth/refresh", json={"refresh_token": login["access_token"]}
+    )
+
+    assert resposta.status_code == 401, resposta.text
+
+
+def test_refresh_token_nao_autentica(client, usuario):
+    login = client.post(
+        "/auth/login",
+        data={"username": usuario["email"], "password": "senha12345"},
+    ).json()
+
+    resposta = client.get(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {login['refresh_token']}"},
+    )
+
+    assert resposta.status_code == 401, resposta.text
+
+
+def test_refresh_token_usuario_inexistente(client, usuario):
+    token = jwt.encode(
+        {
+            "sub": "999999",
+            "type": "refresh",
+            "exp": datetime.now(timezone.utc) + timedelta(minutes=5),
+        },
+        settings.secret_key,
+        algorithm=settings.algorithm,
+    )
+
+    resposta = client.post("/auth/refresh", json={"refresh_token": token})
+
+    assert resposta.status_code == 401, resposta.text
+
+
+def test_refresh_token_usuario_desativado(client, usuario):
+    login = client.post(
+        "/auth/login",
+        data={"username": usuario["email"], "password": "senha12345"},
+    ).json()
+
+    cancelamento = client.patch(
+        f"/usuarios/{usuario['id']}/cancelar",
+        headers={"Authorization": f"Bearer {login['access_token']}"},
+    )
+    assert cancelamento.status_code == 200, cancelamento.text
+
+    resposta = client.post(
+        "/auth/refresh", json={"refresh_token": login["refresh_token"]}
+    )
+
+    assert resposta.status_code == 401, resposta.text

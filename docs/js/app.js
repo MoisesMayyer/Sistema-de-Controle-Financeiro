@@ -1,4 +1,4 @@
-import { api, hasToken, setToken } from './api.js';
+import { api, clearSession, hasToken, setToken, setRefreshToken } from './api.js';
 import { buildForm, validateRecord } from './forms.js';
 import { renderSummary, renderTransactions, renderGoals, renderCategories, renderCategoryFilter } from './render.js';
 
@@ -133,6 +133,7 @@ async function submitAuth(event) {
     const session = await api.login(email, senha);
     if (!session?.access_token) throw new Error('A API não retornou um token de acesso.');
     setToken(session.access_token);
+    setRefreshToken(session.refresh_token);
     const user = await api.me();
     authPending(false);
     await enterApp(user);
@@ -349,7 +350,7 @@ $('#retry').addEventListener('click', loadData);
 $('#logout').addEventListener('click', () => {
   if (mutationBusy) return;
   if (editor && !window.confirm('Sair e descartar o formulário aberto?')) return;
-  setToken('');
+  clearSession();
   pendingDraft = null;
   showAuth();
   $('#auth-email').focus();

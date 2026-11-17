@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
     database_url: str = Field(validation_alias="DATABASE_URL")
 
     CORS_ORIGINS: str = "http://localhost:8800,https://moisesmayyer.github.io"

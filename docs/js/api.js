@@ -1,8 +1,13 @@
 import { API_BASE_URL } from './config.js';
 
 const SESSION_KEY = 'controle-financeiro.token';
+const REFRESH_KEY = 'controle-financeiro.refresh';
 let token = '';
-try { token = sessionStorage.getItem(SESSION_KEY) || ''; } catch { /* Navegador sem armazenamento: sessão em memória. */ }
+let refreshToken = '';
+try {
+  token = sessionStorage.getItem(SESSION_KEY) || '';
+  refreshToken = sessionStorage.getItem(REFRESH_KEY) || '';
+} catch { /* Navegador sem armazenamento: sessão em memória. */ }
 
 export class ApiError extends Error {
   constructor(message, status = 0) {
@@ -18,6 +23,17 @@ export function setToken(value) {
     if (token) sessionStorage.setItem(SESSION_KEY, token);
     else sessionStorage.removeItem(SESSION_KEY);
   } catch { /* O acesso continua disponível nesta página. */ }
+}
+export function setRefreshToken(value) {
+  refreshToken = value || '';
+  try {
+    if (refreshToken) sessionStorage.setItem(REFRESH_KEY, refreshToken);
+    else sessionStorage.removeItem(REFRESH_KEY);
+  } catch { /* O acesso continua disponível nesta página. */ }
+}
+export function clearSession() {
+  setToken('');
+  setRefreshToken('');
 }
 export const hasToken = () => Boolean(token);
 
@@ -40,7 +56,29 @@ function errorMessage(body, status) {
   return `Não foi possível concluir a operação (HTTP ${status}). Tente novamente.`;
 }
 
-async function request(path, { method = 'GET', body, authenticated = true, form = false } = {}) {
+let refreshRequest = null;
+
+async function refreshAccessToken() {
+  if (!refreshToken) throw new ApiError('Sessão expirada.', 401);
+  if (!refreshRequest) {
+    refreshRequest = request('/auth/refresh', {
+      method: 'POST',
+      authenticated: false,
+      body: { refresh_token: refreshToken },
+      retry: false,
+    })
+      .then(session => {
+        if (!session?.access_token) throw new ApiError('Sessão expirada.', 401);
+        setToken(session.access_token);
+        if (session.refresh_token) setRefreshToken(session.refresh_token);
+        return session.access_token;
+      })
+      .finally(() => { refreshRequest = null; });
+  }
+  return refreshRequest;
+}
+
+async function request(path, { method = 'GET', body, authenticated = true, form = false, retry = true } = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   const headers = { Accept: 'application/json' };
@@ -63,7 +101,13 @@ async function request(path, { method = 'GET', body, authenticated = true, form 
     }
     if (!response.ok) {
       if (response.status === 401 && authenticated && sentToken === token) {
-        setToken('');
+        if (retry && refreshToken) {
+          try {
+            await refreshAccessToken();
+            return await request(path, { method, body, authenticated, form, retry: false });
+          } catch { /* Falha ao renovar: encerra a sessão abaixo. */ }
+        }
+        clearSession();
         window.dispatchEvent(new Event('session-expired'));
       }
       throw new ApiError(errorMessage(data, response.status), response.status);

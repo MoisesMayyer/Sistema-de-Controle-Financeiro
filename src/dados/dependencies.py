@@ -25,6 +25,9 @@ def verificar_token(
         payload = jwt.decode(
             token, settings.secret_key, algorithms=[settings.algorithm]
         )
+        if payload.get("type") not in (None, "access"):
+            raise HTTPException(status_code=401, detail="Acesso negado")
+
         usuario_id = payload.get("sub")
 
         if usuario_id is None:
