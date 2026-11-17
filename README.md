@@ -21,7 +21,7 @@ API REST **multi-usuário** de controle financeiro pessoal com autenticação JW
 
 ## Sumário
 
-[Sobre](#sobre-o-projeto) · [Funcionalidades](#funcionalidades) · [Stack](#stack) · [Como rodar](#como-rodar) · [Deploy](#deploy) · [Como usar](#como-usar) · [Endpoints](#endpoints) · [Regras](#regras-de-negócio) · [Códigos](#códigos-de-status) · [Modelo de dados](#modelo-de-dados) · [Frontend](#frontend) · [Decisões](#decisões-técnicas) · [Qualidade](#qualidade) · [O que falta](#o-que-falta)
+[Sobre](#sobre-o-projeto) · [Funcionalidades](#funcionalidades)· [Como rodar](#como-rodar) · [Deploy](#deploy) · [Como usar](#como-usar) · [Endpoints](#endpoints) · [Regras](#regras-de-negócio) · [Modelo de dados](#modelo-de-dados) · [Frontend](#frontend) · [Decisões](#decisões-técnicas) · [Qualidade](#qualidade) · [O que falta](#o-que-falta)
 
 ## Sobre o projeto
 
@@ -72,19 +72,6 @@ flowchart LR
 - **Auditoria:** timestamps `criado_em` e `atualizado_em` em todas as tabelas.
 - **Produção:** migrações com Alembic, CORS restrito, rate limiting e health check.
 
-## Stack
-
-| Camada | Tecnologia |
-|---|---|
-| Linguagem | Python 3.10+ (testado em 3.14) |
-| Framework | FastAPI 0.162 + Uvicorn |
-| ORM / banco | SQLAlchemy 2.1 + PostgreSQL (psycopg 3) |
-| Validação | Pydantic 2.14 + pydantic-settings |
-| Migrações | Alembic 1.20 |
-| Autenticação | PyJWT (HS256), pwdlib (Argon2), slowapi |
-| Frontend | HTML5, CSS3, JavaScript (módulos ES) |
-| Testes | pytest + TestClient sobre PostgreSQL real |
-| Deploy | Render (API) + Neon (PostgreSQL) |
 
 ## Como rodar
 
@@ -142,9 +129,6 @@ alembic downgrade -1                              # desfaz a última
 Para zerar o banco local: `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` e rode `alembic upgrade head` de novo.
 
 </details>
-
-> [!WARNING]
-> `.env` contém segredos e é ignorado pelo Git. Nunca faça commit da `SECRET_KEY`, da senha do banco ou de um `.env` real.
 
 ### Testes
 
