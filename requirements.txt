@@ -18,3 +18,5 @@ alembic==1.20.1
 # Testes
 pytest==9.2.0
 httpx==0.28.1
+
+slowapi==0.1.10

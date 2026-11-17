@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import date
 
 from dados.dependencies import get_db, verificar_token
+from dados.limiter import LIMITE_GET, limiter
 from dados.models import Categoria, Transacao, Usuario, TipoTransacao
 from dados.schemas import (
     TransacaoCreate,
@@ -16,7 +17,9 @@ router_transacao = APIRouter(prefix="/transacoes", tags=["Transações"])
 
 
 @router_transacao.get("/", response_model=TransacaoListResponse)
+@limiter.limit(LIMITE_GET)
 def listar_transacoes(
+        request: Request,
         db: Session = Depends(get_db),
         usuario: Usuario = Depends(verificar_token),
         skip: int = Query(0, ge=0),
@@ -66,7 +69,8 @@ def listar_transacoes(
 
 
 @router_transacao.get("/{id}", response_model=TransacaoResponse)
-def buscar_transacao(id: int, db: Session = Depends(get_db), usuario: Usuario = Depends(verificar_token)):
+@limiter.limit(LIMITE_GET)
+def buscar_transacao(request: Request, id: int, db: Session = Depends(get_db), usuario: Usuario = Depends(verificar_token)):
 
     transacao = (
         db.query(Transacao)

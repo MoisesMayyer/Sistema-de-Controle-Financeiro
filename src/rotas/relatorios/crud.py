@@ -1,11 +1,12 @@
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from dados.dependencies import get_db, verificar_token
+from dados.limiter import LIMITE_GET, limiter
 from dados.models import Transacao, TipoTransacao, Usuario
 from dados.schemas import (
     RelatorioValorResponse,
@@ -17,7 +18,9 @@ router_relatorio = APIRouter(prefix="/relatorios", tags=["Relatórios"])
 
 
 @router_relatorio.get("/receitas", response_model=TransacaoListResponse)
+@limiter.limit(LIMITE_GET)
 def pegar_receitas(
+    request: Request,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(verificar_token),
     skip: int = Query(0, ge=0),
@@ -50,7 +53,9 @@ def pegar_receitas(
 
 
 @router_relatorio.get("/despesas", response_model=TransacaoListResponse)
+@limiter.limit(LIMITE_GET)
 def pegar_despesas(
+    request: Request,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(verificar_token),
     skip: int = Query(0, ge=0),
@@ -83,7 +88,9 @@ def pegar_despesas(
 
 
 @router_relatorio.get("/valor_receita", response_model=RelatorioValorResponse)
+@limiter.limit(LIMITE_GET)
 def pegar_valor_receitas(
+    request: Request,
     ano: int = Query(..., ge=2000, le=2100),
     mes: int = Query(..., ge=1, le=12),
     db: Session = Depends(get_db),
@@ -108,7 +115,9 @@ def pegar_valor_receitas(
 
 
 @router_relatorio.get("/valor_despesas", response_model=RelatorioValorResponse)
+@limiter.limit(LIMITE_GET)
 def pegar_valor_despesas(
+    request: Request,
     ano: int = Query(..., ge=2000, le=2100),
     mes: int = Query(..., ge=1, le=12),
     db: Session = Depends(get_db),

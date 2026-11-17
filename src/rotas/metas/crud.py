@@ -1,9 +1,10 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Body, Query
+from fastapi import APIRouter, Depends, HTTPException, Body, Query, Request
 from sqlalchemy.orm import Session
 
 from dados.dependencies import get_db, verificar_token
+from dados.limiter import LIMITE_GET, limiter
 from dados.models import Meta, Usuario
 from dados.schemas import MetaCreate, MetaUpdate, MetaResponse, MetaListResponse
 
@@ -31,7 +32,9 @@ def meta_to_response(meta: Meta) -> MetaResponse:
 
 
 @router_meta.get("/", response_model=MetaListResponse)
+@limiter.limit(LIMITE_GET)
 def listar_metas(
+        request: Request,
         db: Session = Depends(get_db),
         usuario: Usuario = Depends(verificar_token),
         skip: int = Query(0, ge=0),
@@ -61,7 +64,8 @@ def listar_metas(
 
 
 @router_meta.get("/{id}", response_model=MetaResponse)
-def buscar_meta(id: int, db: Session = Depends(get_db), usuario: Usuario = Depends(verificar_token)):
+@limiter.limit(LIMITE_GET)
+def buscar_meta(request: Request, id: int, db: Session = Depends(get_db), usuario: Usuario = Depends(verificar_token)):
 
     meta = db.query(Meta).filter(Meta.id == id, Meta.usuario_id == usuario.id).first()
 

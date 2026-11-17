@@ -38,8 +38,10 @@ os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
 
 from dados.database import Base, SessionLocal, engine  # noqa: E402
 from dados.models import Usuario  # noqa: E402, F401
+from dados.limiter import limiter
 from main import app  # noqa: E402
 
+limiter.enabled = False
 
 LOCK_KEY = int.from_bytes(
     hashlib.sha256(TEST_DATABASE_URL.encode()).digest()[:8],

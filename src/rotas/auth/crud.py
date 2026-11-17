@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from dados.dependencies import get_db, verificar_token
+from dados.limiter import LIMITE_GET, limiter
 from dados.models import Usuario
 from dados.schemas import Token
 from dados.schemas.usuario import UsuarioResponse
@@ -33,5 +34,6 @@ def login(
 
 
 @router_auth.get("/me", response_model=UsuarioResponse)
-def get_user(usuario: Usuario = Depends(verificar_token)):
+@limiter.limit(LIMITE_GET)
+def get_user(request: Request, usuario: Usuario = Depends(verificar_token)):
     return usuario

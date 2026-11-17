@@ -472,7 +472,7 @@ Itens conhecidos, em ordem de prioridade:
 - [X] CI no GitHub Actions com pytest
 - [X] CORS configurado
 - [ ] Refresh token e revogação de access token
-- [ ] Rate limiting no login
+- [X] Rate limiting no login
 - [X] Deploy com link público
 
 ## Status do projeto

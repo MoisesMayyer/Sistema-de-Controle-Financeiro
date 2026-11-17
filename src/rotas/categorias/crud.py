@@ -1,9 +1,10 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from dados.dependencies import get_db, verificar_token
+from dados.limiter import LIMITE_GET, limiter
 from dados.models import Categoria, TipoTransacao, Usuario
 from dados.schemas import (
     CategoriaCreate,
@@ -39,7 +40,9 @@ def categoria_to_response(categoria: Categoria) -> CategoriaResponse:
 
 
 @router_categoria.get("/", response_model=CategoriaListResponse)
+@limiter.limit(LIMITE_GET)
 def listar_categorias(
+        request: Request,
         db: Session = Depends(get_db),
         usuario: Usuario = Depends(verificar_token),
         skip: int = Query(0, ge=0),
@@ -69,7 +72,8 @@ def listar_categorias(
 
 
 @router_categoria.get("/{id}", response_model=CategoriaResponse)
-def buscar_categoria(id: int, db: Session = Depends(get_db), usuario: Usuario = Depends(verificar_token)):
+@limiter.limit(LIMITE_GET)
+def buscar_categoria(request: Request, id: int, db: Session = Depends(get_db), usuario: Usuario = Depends(verificar_token)):
 
     categoria = (
         db.query(Categoria)

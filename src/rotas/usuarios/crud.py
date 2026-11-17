@@ -1,9 +1,10 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from dados.dependencies import get_db, verificar_token
+from dados.limiter import LIMITE_GET, limiter
 from dados.models import Usuario
 from dados.schemas.usuario import (
     UsuarioCreate,
@@ -17,7 +18,9 @@ router_usuario = APIRouter(prefix="/usuarios", tags=["Usuários"])
 
 
 @router_usuario.get("/", response_model=UsuarioListResponse)
+@limiter.limit(LIMITE_GET)
 def listar_usuarios(
+    request: Request,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(verificar_token),
     skip: int = Query(0, ge=0),
@@ -54,7 +57,9 @@ def listar_usuarios(
 
 
 @router_usuario.get("/{id}", response_model=UsuarioResponse)
+@limiter.limit(LIMITE_GET)
 def buscar_usuario(
+    request: Request,
     id: int,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(verificar_token),
