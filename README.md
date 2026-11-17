@@ -423,4 +423,4 @@ Em ordem de prioridade:
 
 ## Status do projeto
 
-O projeto está no ar: API no Render, banco no Neon e CRUD completo com JWT sobre PostgreSQL. Autenticação, isolamento por usuário, paginação, filtros, agregados de categorias, metas com progresso e relatórios mensais funcionando. A suíte tem 249 testes, mypy limpo e cobertura alta. Próximos passos: CI no GitHub Actions e versão do `.env.example`.
+O projeto está no ar: API no Render, banco no Neon e CRUD completo com JWT sobre PostgreSQL. Autenticação, isolamento por usuário, paginação, filtros, agregados de categorias, metas com progresso e relatórios mensais funcionando. A suíte tem 249 testes, mypy limpo e cobertura alta.
